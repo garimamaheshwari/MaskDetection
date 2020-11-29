@@ -4,6 +4,7 @@
 #include <iostream>
 #include <math.h>
 #include <map>
+#include "objectRecognition.h"
 using namespace cv;
 using namespace std;
 
@@ -24,6 +25,15 @@ void edgeDetection(Mat &image, string imageType, pair<int, int> k, pair<double, 
   // Perform edge detection on blurred image
   Canny(image, image, threshold.first, threshold.second);
 
+  //Mat scaled;
+  ////checking scaling
+  //resize(image, scaled, scaled.size(), 2.5, 2.5);
+
+  //// Display edge detection results
+  //namedWindow(imageType + ": Canny Edge Detection output");
+  //imshow(imageType + ": Canny Edge Detection output", scaled);
+  //waitKey(0);
+
   // Display edge detection results
   namedWindow(imageType + ": Canny Edge Detection output");
   imshow(imageType  + ": Canny Edge Detection output", image);
@@ -39,4 +49,5 @@ void readImage(Mat& input,string imageType) {
 	
   edgeDetection(input, imageType, make_pair(7,7), make_pair(2.0,2.0), make_pair(50,55));
 }
+
 
