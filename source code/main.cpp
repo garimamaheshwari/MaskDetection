@@ -1,38 +1,32 @@
-// main.cpp
-// Author: 
-
+/* Authors: Garima Maheshwari and Hailey Schauman
+ * Date: 11/30/2020
+ *
+ * Description: Used to execute a set of tests that determine if a given search
+ * image has an exemplar. */
+#include "tests.hpp"
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-#include <iostream>
-#include <math.h>
-#include <map>
-#include "Functions.hpp"
 
 using namespace cv;
 using namespace std;
 
+/* Purpose: Call all tests in tests.hpp.
+ * Pre-conditions: None.
+ * Post-conditions: Pass all tests. */
+int main(int argc, char *argv[]) {
 
+  /* COTTON MASKS */
 
+  /* Test front-view cotton masks. */
+  cottonMaskTestFV();
+  /* Test left-view cotton masks. */
+  cottonMaskTestLV();
+  /* Test right-view cotton masks. */
+  cottonMaskTestRV();
 
-// main:
-// precondition: 
-// postconditions: 
-int main(int argc, char* argv[])
-{	
-	 // Read in exemplar image (frontview of mask)
-		 Mat exemplar = imread("frontView.jpg");
-         readImage(exemplar, "Exemplar Front View");
+  /* N95 MASKS */
 
-	// Read in person wearing mask (frontview)
-         Mat person1 = imread("person1.jpg");
-         readImage(person1, "Person1 wearing mask(front view)");
-
-    // Read in another person wearing mask (frontview)
-         Mat person2 = imread("person2.jpg");
-         readImage(person2, "Person2 wearing mask(front view)");
-
-
-
-
+  return 0;
 }
