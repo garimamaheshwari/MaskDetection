@@ -26,28 +26,38 @@ bool ObjectRecognition::match(Mat &searchImage) { return false; }
  * Pre-conditions: none.
  * Post-conditions: Creates a transformation space for scaling/rotation. */
 void ObjectRecognition::transformationSpace() {
+  /* Initialize dimension size for transformation space. */
+  int xScale = dimensionSize(maxXScale, incrementScale);
+  int yScale = dimensionSize(maxYScale, incrementScale);
+  int rotationScale = dimensionSize(maxRotation, incrementRotation);
+  int dims[] = {xScale, yScale, rotationScale};
 
-  // translations = exemplar.clone();
-  // creating 3D array
-  //  int dims[] = {maxXScale / incrementScale, maxYScale / incrementScale,
-  //              360 / incrementRotation};
-  //// create 3D histogram of integers initialized to zero
-  // Mat hist(3, dims, CV_32S, Scalar::all(0));
-  //// for (int row = 0; row < foreground.rows; row++) {
-  ////  for (int col = 0; col < foreground.cols; col++) {
-  ////    // foreground.at<Vec3b>(r, c)[b]
-  ////    int r = foreground.at<Vec3b>(row, col)[2] / bucketSize;
-  ////    int g = foreground.at<Vec3b>(row, col)[1] / bucketSize;
-  ////    int b = foreground.at<Vec3b>(row, col)[0] / bucketSize;
+  /* Create 3D histogram, which will be used to calculate scales and rotation. */
+  Mat hist(3, dims, CV_32S, Scalar::all(0));
 
-  ////    hist.at<int>(r, g, b) += 1;
-  ////  }
-  ////}
-  ////
+  for (int row = 0; row < xScale; ++row) {
+    for (int col = 0; col < yScale; ++col) {
+      for (int depth = 0; depth < rotationScale; ++depth) {
+      
+      } 
+    }
+  }
 
-  // for (int row = 0; row < foreground.rows; row++) {
-  //  for (int col = 0; col < foreground.cols; col++) {
+  /* Initialize transformation space. */
+  scaleAndRotation = hist.clone();
+}
 
-  //  }
-  //}
+/* Purpose: To calculate the dimension size of a given transformation axis.
+ * Pre-conditions: none.
+ * Post-conditions: Returns a number that corresponds to an axis' size for the
+ *          transformation space. */
+int ObjectRecognition::dimensionSize(double transform, int increment) const {
+  double size = transform / increment;
+
+  /* If the size is a whole number, return size. Otherwise, increment the size
+   * by one and downcast to an int. This prevents a loss of data. */
+  if (floor(size) == size)
+    return size;
+
+  return static_cast<int>(size) + 1;
 }

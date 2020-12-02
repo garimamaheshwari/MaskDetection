@@ -21,8 +21,9 @@ using namespace std;
 const int maxPixelValue = 750;
 /* Variable used for the increment when scaling an image. */
 const int incrementScale = 0.05;
-/* Variable used for the increment when rotating an image. */
+/* Variables used for the increment when rotating an image. */
 const int incrementRotation = 5;
+const int maxRotation = 360;
 
 class ObjectRecognition {
 public:
@@ -40,6 +41,12 @@ private:
    * Pre-conditions: none.
    * Post-conditions: Creates a transformation space for scaling/rotation. */
   void transformationSpace();
+
+  /* Purpose: To calculate the dimension size of a given transformation axis.
+   * Pre-conditions: none.
+   * Post-conditions: Returns a number that corresponds to an axis' size for the
+   *          transformation space. */
+  int dimensionSize(double transform, int increment) const;
 
   /* Stores the exemplar. */
   Mat exemplar;

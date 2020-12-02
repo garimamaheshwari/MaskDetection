@@ -13,16 +13,28 @@
 using namespace cv;
 using namespace std;
 
+/* Threshold deviation to automatically detect minimum and maximum threshold in
+ * edge detection. */
+const int thresholdDev = 25;
+/* Kernel size for blurring. */
+const pair<int, int> kernel(7, 7);
+
 /* Purpose: To perform edge detection on an image.
  * Pre-conditions: Parameters are valid.
  * Post-conditions: Changes the color image to an edge-detected image and
  *            outputs this image. */
-void edgeDetection(Mat &image, string imageType, pair<int, int> k,
-                   pair<double, double> sigma, pair<double, double> threshold) {
+void edgeDetection(Mat &image, string imageType,
+                   pair<double, double> sigma) {
   /* Convert image to gray-scale and then perform Gaussian blur on the image. */
   cvtColor(image, image, COLOR_BGR2GRAY);
-  Size kSize(k.first, k.second);
+  Size kSize(kernel.first, kernel.second);
   GaussianBlur(image, image, kSize, sigma.first, sigma.second);
+
+  /* Obtain edge detection thresholds. */
+  double average = mean(image)[0];
+  pair<double, double> threshold;
+  threshold.first = abs(average - thresholdDev);
+  threshold.second = abs(average + thresholdDev);
 
   /* Perform edge detection on the image. */
   Canny(image, image, threshold.first, threshold.second);
@@ -37,14 +49,16 @@ void edgeDetection(Mat &image, string imageType, pair<int, int> k,
  * Pre-conditions: image is valid (e.g., not .gif).
  * Post-conditions: Transforms image by having it undergo edge detection. */
 void readImage(Mat &image, string imageType) {
+  /* Resize image if needed. */
+
+
   /* Display original image for comparison. */
   namedWindow(imageType);
   imshow(imageType, image);
   waitKey(0);
 
   /* Perform edge detection on image. */
-  edgeDetection(image, imageType, make_pair(7, 7), make_pair(2.0, 2.0),
-                make_pair(50, 55));
+  edgeDetection(image, imageType, make_pair(2.0, 2.0));
 }
 
 /* THINGS NOT IN USE. */
