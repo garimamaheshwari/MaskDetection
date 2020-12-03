@@ -22,11 +22,14 @@ int main(int argc, char *argv[]) {
   Mat exemplarFV = imread("cottonMaskFV.jpg");
   readImage(exemplarFV, "Exemplar: Front View");
 
-  Mat exemplarLV = imread("cottonMaskLV.jpg");
-  readImage(exemplarLV, "Exemplar: Left View");
+  ObjectRecognition exemplar(exemplarFV);
+  exemplar.transformationSpace();
+  exemplar.printTransformationSpace();
+  //Mat exemplarLV = imread("cottonMaskLV.jpg");
+  //readImage(exemplarLV, "Exemplar: Left View");
 
-  Mat exemplarRV = imread("cottonMaskRV.jpg");
-  readImage(exemplarRV, "Exemplar: Right View");
+  //Mat exemplarRV = imread("cottonMaskRV.jpg");
+  //readImage(exemplarRV, "Exemplar: Right View");
 
 
 

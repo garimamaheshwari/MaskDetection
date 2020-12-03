@@ -17,7 +17,7 @@ using namespace std;
  * edge detection. */
 const int thresholdDev = 25;
 /* Kernel size for blurring. */
-const pair<int, int> kernel(7, 7);
+const pair<int, int> kernel(3, 3);
 
 /* Purpose: To perform edge detection on an image.
  * Pre-conditions: Parameters are valid.
@@ -49,9 +49,6 @@ void edgeDetection(Mat &image, string imageType,
  * Pre-conditions: image is valid (e.g., not .gif).
  * Post-conditions: Transforms image by having it undergo edge detection. */
 void readImage(Mat &image, string imageType) {
-  /* Resize image if needed. */
-
-
   /* Display original image for comparison. */
   namedWindow(imageType);
   imshow(imageType, image);
