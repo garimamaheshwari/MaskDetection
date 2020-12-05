@@ -7,19 +7,23 @@
  * exemplar image is tested against the search image. If it surpases a certain
  * threshold, a match exists. */
 #pragma once
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <map>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+
 using namespace cv;
 using namespace std;
+
+/* Edge value in an edge-detected image: */
 const int edge = 255;
 
 /* VARIABLES USED FOR TRANSFORMATION SPACE. */
 
 /* Structure that stores the transformations in the scaling and rotation of a
- * transformation space. */
+ * transformation space: */
 struct Transformations {
   double xScale;
   double yScale;
@@ -34,14 +38,14 @@ public:
   ObjectRecognition(const Mat &exemplar);
   /* Purpose: Destructor to remove dynamic memory.
    * Pre-conditions: None.
-   * Post-conditions: Deletes Transformations structs in transformCombinations. */
+   * Post-conditions: Deletes struct objects in transformCombinations. */
   ~ObjectRecognition();
   /* Purpose: To perform object recognition on an exemplar and searchImage.
    * Pre-conditions: searchImage is a valid image (e.g., not .gif).
    * Post-conditions: Returns true if the exemplar is found in the image. */
   bool match(Mat &searchImage);
   /* Purpose: To create a transformation space for the exemplar.
-   * Pre-conditions: none.
+   * Pre-conditions: None.
    * Post-conditions: Creates a transformation space for scaling/rotation. */
   void transformationSpace();
   /* Purpose: To print transformation space;
@@ -51,38 +55,51 @@ public:
   void printTransformationSpace() const;
 
 private:
+  /* Purpose: Divide and conquer in the transformation space.
+   * Pre-conditions: None.
+   * Post-conditions: Greatest count of edge matches in the transformation space
+   *          in that translation. */
+  int divideAndConquer(const Mat &searchImage, pair<int, int> translation,
+                       pair<int, int> startingPoint, pair<int, int> dimensions,
+                       int greatestCount) const;
 
   /* Purpose: To calculate the dimension size of a given transformation axis.
-   * Pre-conditions: none.
+   * Pre-conditions: None.
    * Post-conditions: Returns a number that corresponds to an axis' size for the
    *          transformation space. */
   int dimensionSize(double transform, double increment) const;
-
-    /* Purpose: To calculate the count given the transformation.
-   * Pre-conditions: none.
-   * Post-conditions: returns the count of the given point on the image  */
-  int getCount(Mat &searchImage, pair<double, double> scale, int rotation,
+  /* Purpose: To calculate the count given the transformation.
+   * Pre-conditions: None.
+   * Post-conditions: Returns the count of the given point on the image.  */
+  int getCount(const Mat &searchImage, pair<double, double> scale, int rotation,
                pair<int, int> origin) const;
+  /* Purpose: To check the neighbors of a given (row, col) to see if edge.
+   * Pre-conditions: None.
+   * Post-conditions: Returns true if an edge exists.  */
+  bool checkNeighbors(const Mat &searchImage, double row, double col) const;
 
-  /* Stores the exemplar. */
+  /* Stores the exemplar: */
   Mat exemplar;
   /* 3D vector that stores rotation and xScale and yScale combinations.
-   * Used for transformation space. */
+   * Used for transformation space: */
   vector<vector<vector<Transformations *>>> transformCombinations;
-  /* Stores the maximum size of scaling an image. */
+  /* Stores the maximum size of scaling an image: */
   double maxXScale;
   double maxYScale;
+
   /* Variable for max size for an exemplar image.
-   * Used to calculate the maximum size of scaling. */
+   * Used to calculate the maximum size of scaling: */
   const int maxPixelValue = 750;
-  /* Variable used for the increment when scaling an image. */
+  /* Variable used for the increment when scaling an image: */
   const double incrementScale = 0.10;
-  /* Variables used for the increment when rotating an image. */
+  /* Variables used for the increment when rotating an image: */
   const int incrementRotation = 60;
   const int maxRotation = 180;
 
-  /* Number of edges in exemplar. */
+  /* Number of edges in exemplar: */
   int exemplarEdges;
+  const int edgeThreshold = 20;
+  int bounds;
 };
 
 /* THINGS NOT USED ANYMORE. */

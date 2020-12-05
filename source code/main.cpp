@@ -26,23 +26,34 @@ int main(int argc, char *argv[]) {
 
   /*TESTING IMAGE CROPPING*/
 
-  ////Reading person image:
+  //Reading person image:
   Mat person1FV = imread("person1.jpg");
   readImage(person1FV, "Person 1: front view");
   trimImage(person1FV);
 
-  //// Reading person 2 image:
+  // Reading person 2 image:
   //Mat person2FV = imread("person2.jpg");
   //readImage(person2FV, "Person 2: front view");
   //trimImage(person2FV);
 
+  
+  /* NEGATIVE IMAGES */
+  //Mat butterfly = imread("butterfly.jpg");
+  //readImage(butterfly, "NEGATIVE Image");
+  //trimImage(butterfly);
 
   //Call smaller image function:
-
 
   ObjectRecognition exemplar(exemplarFV);
   exemplar.transformationSpace();
   exemplar.match(person1FV);
+  //exemplar.match(person2FV);
+ // exemplar.match(butterfly);
+
+  //Mat test = imread("cottonMaskFV.jpg");
+  //readImage(test, "Exemplar: Front View");
+  //exemplar.match(test);
+  //trimImage(test);
 
   //exemplar.printTransformationSpace();
   //Mat exemplarLV = imread("cottonMaskLV.jpg");

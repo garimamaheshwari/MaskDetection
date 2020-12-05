@@ -24,23 +24,22 @@ const pair<int, int> kernel(3, 3);
  * Pre-conditions: Parameters are valid.
  * Post-conditions: Changes the color image to an edge-detected image and
  *            outputs this image. */
-void edgeDetection(Mat &image, string imageType,
-                   pair<double, double> sigma) {
-  /* Convert image to gray-scale and then perform Gaussian blur on the image. */
+void edgeDetection(Mat &image, string imageType, pair<double, double> sigma) {
+  /* Convert image to gray-scale and then perform Gaussian blur on the image: */
   cvtColor(image, image, COLOR_BGR2GRAY);
   Size kSize(kernel.first, kernel.second);
   GaussianBlur(image, image, kSize, sigma.first, sigma.second);
 
-  /* Obtain edge detection thresholds. */
+  /* Obtain edge detection thresholds: */
   double average = mean(image)[0];
   pair<double, double> threshold;
   threshold.first = abs(average - minThresholdDev);
   threshold.second = abs(average + maxThresholdDev);
 
-  /* Perform edge detection on the image. */
+  /* Perform edge detection on the image: */
   Canny(image, image, threshold.first, threshold.second);
 
-  /* Display the edge-detected image to the output window. */
+  /* Display the edge-detected image to the output window: */
   namedWindow(imageType + ": Canny Edge Detection output");
   imshow(imageType + ": Canny Edge Detection output", image);
   waitKey(0);
@@ -50,75 +49,73 @@ void edgeDetection(Mat &image, string imageType,
  * Pre-conditions: image is valid (e.g., not .gif).
  * Post-conditions: Transforms image by having it undergo edge detection. */
 void readImage(Mat &image, string imageType) {
-  /* Display original image for comparison. */
+  /* Display original image for comparison: */
   namedWindow(imageType);
   imshow(imageType, image);
   waitKey(0);
 
-  /* Perform edge detection on image. */
+  /* Perform edge detection on image: */
   edgeDetection(image, imageType, make_pair(2.0, 2.0));
 }
 
-/* Purpose: Read in an input image and trims sides for minimum image size with maximum edges 
- * Pre-conditions: image is valid (e.g., not .gif).
+/* Purpose: Read in an input image and trims sides for minimum image size with
+ * maximum edges Pre-conditions: input is valid (e.g., not .gif).
  * Post-conditions: Transforms image by trimming sides */
 void trimImage(Mat &input) {
-    //save row and col dimensions
-
+  /* Save row and col dimensions: */
   bool foundFirstEdge = false;
   int leastRow = 0;
   int greatestRow = 0;
   int leastCol = 0;
   int greatestCol = 0;
 
-    //iterate through image to find these values:
+  /* Iterate through image to find these values: */
   for (int row = 0; row < input.rows; ++row) {
     for (int col = 0; col < input.cols; ++col) {
-        //check if edge 
-        if (input.at<uchar>(row, col) == edge) {
+      /* Check if edge: */
+      if (input.at<uchar>(row, col) == edge) {
 
-            //set first edge to be where the "rectangle of edges" begins
-          if (!foundFirstEdge) {
+        /* Set first edge to be where the "rectangle of edges" begins: */
+        if (!foundFirstEdge) {
+          leastRow = row;
+          leastCol = col;
+          greatestRow = row;
+          greatestCol = col;
+          foundFirstEdge = true;
+        } else {
+          /* Check if even lesser: */
+          if (row < leastRow) {
+            /* Set row: */
             leastRow = row;
+          }
+          if (col < leastCol) {
+            /* Set col: */
             leastCol = col;
+          }
+          /* Check if greater: */
+          if (row > greatestRow) {
+            /* Set row: */
             greatestRow = row;
+          }
+          if (col > greatestCol) {
+            /* Set col: */
             greatestCol = col;
-            foundFirstEdge = true;
-          } else {
-              //check if even lesser
-            if (row < leastRow) {
-                //set row
-               leastRow = row;
-            }
-            if (col < leastCol) {
-                //set col
-              leastCol = col;
-            }
-            //check if greater
-            if (row >  greatestRow){
-                //set row
-              greatestRow = row;
-            }
-            if (col > greatestCol) {
-                //set col
-              greatestCol = col;
-            }
           }
         }
+      }
     }
   }
-  
-  // set the image and crop using opencv 
+
+  /* Set the image and crop using opencv: */
   cv::Rect newDim(leastCol, leastRow, greatestCol - leastCol,
-                 greatestRow - leastRow);
+                  greatestRow - leastRow);
 
   input = input(newDim);
 
-  //print out new cropped image
+  /* Print out new cropped image: */
   namedWindow("Cropped Image");
   imshow("Cropped Image", input);
   waitKey(0);
-    
 }
 
 /* THINGS NOT IN USE. */
