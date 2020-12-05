@@ -15,6 +15,17 @@ ObjectRecognition::ObjectRecognition(const Mat &exemplar) {
   this->exemplar = exemplar.clone();
   maxXScale = maxPixelValue / exemplar.rows;
   maxYScale = maxPixelValue / exemplar.cols;
+  
+  /*Count number of edges in exemplar image*/
+  exemplarEdges = 0;
+  for (int row = 0; row < exemplar.rows; ++row) {
+    for (int col = 0; col < exemplar.cols; ++col) {
+      if (exemplar.at<uchar>(row, col) == edge) {
+        exemplarEdges++;
+      }
+    }
+  }
+
 }
 
 /* Purpose: Destructor to remove dynamic memory.
@@ -33,9 +44,106 @@ ObjectRecognition::~ObjectRecognition() {
 }
 
 /* Purpose: To perform object recognition on an exemplar and searchImage.
- * Pre-conditions: searchImage is a valid image (e.g., not .gif).
+ * Pre-conditions: searchImage is a valid image (e.g., not .gif) that has already been cropped
  * Post-conditions: Returns true if the exemplar is found in the image. */
-bool ObjectRecognition::match(Mat &searchImage) { return false; }
+bool ObjectRecognition::match(Mat &searchImage) { 
+    //Divide and Conquer variables:
+    int bucketIncrement = 20;
+    int greatestCount = 0;
+    
+
+    //iterate through the number of translations
+    for (int row = 50; row < 55; row += 5) {
+      for (int col = 50; col < 55; col += 5) {
+
+            // iterate through the transformation space
+        int greatestCombo = 0;
+            int r = transformCombinations.size();
+        int c = transformCombinations[0].size();
+            int d = transformCombinations[0][0].size();
+        int total = r * d * c;
+            for (int rowT = 0; rowT < transformCombinations.size(); ++rowT) {
+              for (int colT = 0; colT < transformCombinations[rowT].size();
+                   ++colT) {
+                for (int depth = 0;
+                     depth < transformCombinations[rowT][colT].size(); ++depth) {
+                  pair<double, double> scale =
+                      make_pair(transformCombinations[rowT][colT][depth]->xScale,
+                                transformCombinations[rowT][colT][depth]->yScale);
+                  pair<double, double> origin = make_pair(row,col);
+                  int count =
+                      getCount(searchImage, scale,
+                               transformCombinations[rowT][colT][depth]->rotation,origin);
+                  if (count > greatestCombo) {
+                    greatestCombo = count;
+                  }
+                }
+              }
+            }
+            /*check if greatestCombo is a good enough value*/
+            if (greatestCombo > greatestCount) {
+              greatestCount = greatestCombo;
+            }
+            //if not: change the translation bucket
+
+      }
+    }
+    /*Within exemplar edge range, return true*/
+    cout << "Exemplar Edges: " << exemplarEdges << endl;
+    cout << "Count: " << greatestCount << endl;
+
+    int edgeThreshold = 20;
+
+    return (greatestCount > exemplarEdges - edgeThreshold &&
+            greatestCount < exemplarEdges + edgeThreshold);
+     }
+int ObjectRecognition::getCount(Mat &searchImage, pair<double, double> scale, int rotation,
+                                pair<int, int> origin) const {
+  int count = 0;
+  // iterate through the searchImage:
+  //for (int row = origin.first; row < searchImage.rows; ++row) {
+  //  for (int col = origin.second; col < searchImage.cols; ++col) {
+        //iterate through the exemplar:
+      for (int rowEx = 0; rowEx < exemplar.rows; ++rowEx) {
+        for (int colEx = 0; colEx < exemplar.cols; ++colEx) {
+            //transform exemplar point to match to search image:
+          if (exemplar.at<uchar>(rowEx, colEx) != edge) {
+              continue;
+          }
+          //set the exemplar point w/ respect to origin
+            double newRow = rowEx + origin.first;
+            double newCol = colEx + origin.second;
+            
+          //perform scale
+            newRow = newRow / scale.second;
+            newCol = newCol / scale.first;
+
+           //perform rotation:
+            // convert degrees to radians and find cos and sin values with the
+            // given radians 
+            const double pi = 3.14159265;
+            double cosVal = cos(rotation * (pi / 180));
+            double sinVal = sin(rotation * (pi / 180));
+
+            double radianCol = (cosVal * newCol) + (sinVal * newRow);
+            double radianRow = (-sinVal * newCol) + (cosVal * newRow);
+
+            newCol = radianCol;
+            newRow = radianRow;
+            //check if in bounds
+            if (newCol >= 0 && newCol < searchImage.cols && newRow >= 0 &&
+                newRow < searchImage.rows) {
+                //check if edge:
+              if (searchImage.at<uchar>(newRow, newCol) == edge) {
+                  count++;
+              }
+            }
+      //  }
+      //}
+    }
+  }
+  return count;
+    }
 
 /* Purpose: To create a transformation space for the exemplar.
  * Pre-conditions: None.
@@ -117,3 +225,5 @@ int ObjectRecognition::dimensionSize(double transform, double increment) const {
 
   return static_cast<int>(size);
 }
+
+

@@ -21,10 +21,30 @@ int main(int argc, char *argv[]) {
   /* COTTON MASKS */
   Mat exemplarFV = imread("cottonMaskFV.jpg");
   readImage(exemplarFV, "Exemplar: Front View");
+  trimImage(exemplarFV);
+
+
+  /*TESTING IMAGE CROPPING*/
+
+  ////Reading person image:
+  Mat person1FV = imread("person1.jpg");
+  readImage(person1FV, "Person 1: front view");
+  trimImage(person1FV);
+
+  //// Reading person 2 image:
+  //Mat person2FV = imread("person2.jpg");
+  //readImage(person2FV, "Person 2: front view");
+  //trimImage(person2FV);
+
+
+  //Call smaller image function:
+
 
   ObjectRecognition exemplar(exemplarFV);
   exemplar.transformationSpace();
-  exemplar.printTransformationSpace();
+  exemplar.match(person1FV);
+
+  //exemplar.printTransformationSpace();
   //Mat exemplarLV = imread("cottonMaskLV.jpg");
   //readImage(exemplarLV, "Exemplar: Left View");
 
@@ -35,9 +55,9 @@ int main(int argc, char *argv[]) {
 
   /* Test front-view cotton masks. */
   //cottonMaskTestFV();
-  /* Test left-view cotton masks. */
+  ///* Test left-view cotton masks. */
   //cottonMaskTestLV();
-  /* Test right-view cotton masks. */
+  ///* Test right-view cotton masks. */
   //cottonMaskTestRV();
 
   /* N95 MASKS */
