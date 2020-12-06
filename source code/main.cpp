@@ -23,53 +23,52 @@ int main(int argc, char *argv[]) {
   readImage(exemplarFV, "Exemplar: Front View");
   trimImage(exemplarFV);
 
-
   /*TESTING IMAGE CROPPING*/
 
-  //Reading person image:
+  // Reading person image:
   Mat person1FV = imread("person1.jpg");
   readImage(person1FV, "Person 1: front view");
   trimImage(person1FV);
 
   // Reading person 2 image:
-  //Mat person2FV = imread("person2.jpg");
-  //readImage(person2FV, "Person 2: front view");
-  //trimImage(person2FV);
+  // Mat person2FV = imread("person2.jpg");
+  // readImage(person2FV, "Person 2: front view");
+  // trimImage(person2FV);
 
-  
   /* NEGATIVE IMAGES */
-  //Mat butterfly = imread("butterfly.jpg");
-  //readImage(butterfly, "NEGATIVE Image");
-  //trimImage(butterfly);
+  // Mat butterfly = imread("butterfly.jpg");
+  // readImage(butterfly, "NEGATIVE Image");
+  // trimImage(butterfly);
 
-  //Call smaller image function:
+  // Call smaller image function:
 
   ObjectRecognition exemplar(exemplarFV);
-  exemplar.transformationSpace();
-  exemplar.match(person1FV);
-  //exemplar.match(person2FV);
- // exemplar.match(butterfly);
-
-  //Mat test = imread("cottonMaskFV.jpg");
-  //readImage(test, "Exemplar: Front View");
-  //exemplar.match(test);
-  //trimImage(test);
-
-  //exemplar.printTransformationSpace();
-  //Mat exemplarLV = imread("cottonMaskLV.jpg");
-  //readImage(exemplarLV, "Exemplar: Left View");
-
-  //Mat exemplarRV = imread("cottonMaskRV.jpg");
-  //readImage(exemplarRV, "Exemplar: Right View");
 
 
+    exemplar.transformationSpace();
+    exemplar.match(person1FV);
+  // exemplar.match(person2FV);
+  // exemplar.match(butterfly);
+
+   //Mat test = imread("cottonMaskFV.jpg");
+   //readImage(test, "Exemplar: Front View");
+   //exemplar.match(test);
+   //trimImage(test);
+
+
+  // exemplar.printTransformationSpace();
+  // Mat exemplarLV = imread("cottonMaskLV.jpg");
+  // readImage(exemplarLV, "Exemplar: Left View");
+
+  // Mat exemplarRV = imread("cottonMaskRV.jpg");
+  // readImage(exemplarRV, "Exemplar: Right View");
 
   /* Test front-view cotton masks. */
-  //cottonMaskTestFV();
+  // cottonMaskTestFV();
   ///* Test left-view cotton masks. */
-  //cottonMaskTestLV();
+  // cottonMaskTestLV();
   ///* Test right-view cotton masks. */
-  //cottonMaskTestRV();
+  // cottonMaskTestRV();
 
   /* N95 MASKS */
 

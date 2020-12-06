@@ -55,14 +55,19 @@ public:
   void printTransformationSpace() const;
 
 private:
+  /* Purpose: Divide and conquer with translations.
+   * Pre-conditions: None.
+   * Post-conditions: Returns the highest count if there was a match. */
+  int divideAndConquer(const Mat &searchImage,
+                       pair<int, int> startingPoint, pair<int, int> dimensions,
+                       int greatestCount) const;
   /* Purpose: Divide and conquer in the transformation space.
    * Pre-conditions: None.
    * Post-conditions: Greatest count of edge matches in the transformation space
    *          in that translation. */
-  int divideAndConquer(const Mat &searchImage, pair<int, int> translation,
-                       pair<int, int> startingPoint, pair<int, int> dimensions,
-                       int greatestCount) const;
-
+  int divideAndConquerScale(const Mat &searchImage, pair<int, int> translation,
+                            pair<int, int> startingPoint,
+                            pair<int, int> dimensions, int greatestCount) const;
   /* Purpose: To calculate the dimension size of a given transformation axis.
    * Pre-conditions: None.
    * Post-conditions: Returns a number that corresponds to an axis' size for the
@@ -77,6 +82,10 @@ private:
    * Pre-conditions: None.
    * Post-conditions: Returns true if an edge exists.  */
   bool checkNeighbors(const Mat &searchImage, double row, double col) const;
+  /* Purpose: To check the bound of a given transformed image.
+   * Pre-conditions: None.
+   * Post-conditions: Returns true if the image is within its bound.  */
+  bool checkBounds(double xScale, double yScale, int numberOfEdges) const;
 
   /* Stores the exemplar: */
   Mat exemplar;
@@ -98,8 +107,11 @@ private:
 
   /* Number of edges in exemplar: */
   int exemplarEdges;
-  const int edgeThreshold = 20;
+  const int edgeThreshold = 600;
   int bounds;
+
+  /* Number of buckets: */
+  const int bucketSize = 4;
 };
 
 /* THINGS NOT USED ANYMORE. */

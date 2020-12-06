@@ -49,49 +49,30 @@ ObjectRecognition::~ObjectRecognition() {
  * already been cropped Post-conditions: Returns true if the exemplar is found
  * in the image. */
 bool ObjectRecognition::match(Mat &searchImage) {
-  /* Divide and Conquer variables: */
-  int greatestCount = 0;
+  /* Divide and conquer the translation of an image: */
+  pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
+  int greatestCount =
+      divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1);
 
-  /* Iterate through the number of translations: */
-  for (int row = 0; row < searchImage.rows; row += 5) {
-    for (int col = 0; col < searchImage.cols; col += 5) {
-
-      /* int r = transformCombinations.size();
-       int c = transformCombinations[0].size();
-       int d = transformCombinations[0][0].size();
-       int total = r * d * c; */
-
-      /* Dive and conquer the transformation space at a specific translation: */
-      pair<int, int> dimensions;
-      dimensions.first = dimensionSize(maxXScale, incrementScale);
-      dimensions.second = dimensionSize(maxYScale, incrementScale);
-      greatestCount = divideAndConquer(searchImage, make_pair(row, col),
-                                       make_pair(0, 0), dimensions, -1);
-
-      /* Check to see if there was a match: */
-      if (greatestCount != -1) {
-        cout << "Exemplar Edges: " << exemplarEdges << endl;
-        cout << "Count: " << greatestCount << endl;
-        cout << "RETURNED TRUE." << endl;
-        return true;
-      }
-    }
+  /* Check to see if there was a match. If there is, return true. Otherwise,
+   * return false: */
+  if (greatestCount != -1) {
+    cout << "Exemplar Edges: " << exemplarEdges << endl;
+    cout << "Count: " << greatestCount << endl;
+    cout << "RETURNED TRUE." << endl;
+    return true;
   }
 
   cout << "Exemplar Edges: " << exemplarEdges << endl;
   cout << "Count: " << greatestCount << endl;
 
-  /* If it is within exemplar edge range, a match exists. Return true.
-   * Otherwise, return false: */
   return false;
 }
 
-/* Purpose: Divide and conquer in the transformation space.
+/* Purpose: Divide and conquer with translations.
  * Pre-conditions: None.
- * Post-conditions: Greatest count of edge matches in the transformation space
- *          in that translation. */
+ * Post-conditions: Returns the highest count if there was a match. */
 int ObjectRecognition::divideAndConquer(const Mat &searchImage,
-                                        pair<int, int> translation,
                                         pair<int, int> startingPoint,
                                         pair<int, int> dimensions,
                                         int greatestCount) const {
@@ -101,38 +82,128 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
     return greatestCount;
   }
 
-  /* Calculate new dimensions: */
+  /* Divide the dimensions by 2 to get 4 rectangles for divide and conquer: */
   pair<int, int> newDimensions =
       make_pair(dimensions.first / 2, dimensions.second / 2);
 
-  /* Check if there are no more cells to divide: */
+  /* Check to make sure there are no more cells to divide into. This means the
+   * cell is too small to continue: */
   if (newDimensions.first == 0 || newDimensions.second == 0) {
     return -1;
   }
 
+  /* Store the edge count from each respected quadrant: */
+  map<pair<int, int>, int> edgeCounts;
+
+  /* x and y increment: */
+  int xIncrement = dimensions.first / bucketSize;
+  int yIncrement = dimensions.second / bucketSize;
+
+  /* Go into the middle of each quadrant and use the (x, y) at that location for
+   * the transformation space: */
+  for (int x = 1; x < 3; ++x) {
+    /* Re-initialize the y-increment for its next iteration: */
+    yIncrement = dimensions.second / bucketSize;
+    /* Calculate the x value that is in the middle of a quadrant: */
+    int row = xIncrement + startingPoint.first;
+
+    for (int y = 1; y < 3; ++y) {
+      /* Calculate the y value that is in the middle of a quadrant: */
+      int col = yIncrement + startingPoint.second;
+
+      /* Divide and conquer the transformation space at a translation: */
+      pair<int, int> dimensionsScale;
+      dimensionsScale.first = dimensionSize(maxXScale, incrementScale);
+      dimensionsScale.second = dimensionSize(maxYScale, incrementScale);
+      int count = divideAndConquerScale(searchImage, make_pair(row, col),
+                                        make_pair(0, 0), dimensionsScale, -1);
+
+      /* Check to see if there was a match: */
+      if (count != -1) {
+        edgeCounts[make_pair(row, col)] = count;
+      }
+
+      /* Increment y to the next quadrant in the middle: */
+      yIncrement += (y + 1) * yIncrement;
+    }
+
+    /* Increment x to the next quadrant in the middle: */
+    xIncrement += (x + 1) * xIncrement;
+  }
+
+  /* If the count is greater than the bounds, go into the given cell and divide
+   * and conquer: */
+  for (auto it = edgeCounts.begin(); it != edgeCounts.end(); ++it) {
+    if (it->second > bounds) {
+      pair<int, int> newStartingPoint =
+          make_pair(it->first.first, it->first.second);
+      greatestCount = divideAndConquer(searchImage, newStartingPoint,
+                                       newDimensions, it->second);
+      if (greatestCount != -1) {
+        return greatestCount;
+      }
+    }
+  }
+  return -1;
+}
+
+/* Purpose: Divide and conquer in the transformation space.
+ * Pre-conditions: None.
+ * Post-conditions: Greatest count of edge matches in the transformation space
+ *          in that translation. */
+int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
+                                             pair<int, int> translation,
+                                             pair<int, int> startingPoint,
+                                             pair<int, int> dimensions,
+                                             int greatestCount) const {
+  /* Check if it meets the threshold: */
+  if (greatestCount > exemplarEdges - edgeThreshold &&
+      greatestCount < exemplarEdges + edgeThreshold) {
+    return greatestCount;
+  }
+
+  /* Divide the dimensions by 2 to get 4 rectangles for divide and conquer: */
+  pair<int, int> newDimensions =
+      make_pair(dimensions.first / 2, dimensions.second / 2);
+
+  /* Check to make sure there are no more cells to divide into. This means the
+   * cell is too small to continue: */
+  if (newDimensions.first == 0 || newDimensions.second == 0) {
+    return -1;
+  }
+
+  /* Obtain the origin of where the exemplar will be placed: */
   int tRow = translation.first;
   int tCol = translation.second;
   pair<double, double> origin = make_pair(tRow, tCol);
 
-  /* Keep track of the number of edge matches in each rectange: */
+  /* Store the edge count from each respected quadrant: */
   map<pair<int, int>, int> edgeCounts;
 
+  /* x and y increment: */
+  int xIncrement = dimensions.first / bucketSize;
+  int yIncrement = dimensions.second / bucketSize;
+  pair<double, double> scale = make_pair(0, 0);
+
   /* Divide and conquer: */
-  for (int x = startingPoint.first; x < startingPoint.first + dimensions.first;
-       x += dimensions.first / 2) {
-    for (int y = startingPoint.second;
-         y < startingPoint.second + dimensions.second;
-         y += dimensions.second / 2) {
+  for (int x = 1; x < 3; ++x) {
+    /* Re-initialize the y-increment for its next iteration: */
+    yIncrement = dimensions.second / bucketSize;
+    /* Calculate the x value that is in the middle of a quadrant: */
+    int row = xIncrement + startingPoint.first;
 
-      int row = (x + dimensions.first) / 4;
-      int col = (y + dimensions.second) / 4;
+    for (int y = 1; y < 3; ++y) {
+      /* Calculate the y value that is in the middle of a quadrant: */
+      int col = yIncrement + startingPoint.second;
 
+      /* Keep track of the highest count at a given scale transformation: */
       int count = 0;
+
+      /* Iterate through multiple rotations, finding the best match: */
       for (int depth = 0; depth < transformCombinations[row][col].size();
            ++depth) {
-        pair<double, double> scale =
-            make_pair(transformCombinations[row][col][depth]->xScale,
-                      transformCombinations[row][col][depth]->yScale);
+        scale.first = transformCombinations[row][col][depth]->xScale;
+        scale.second = transformCombinations[row][col][depth]->yScale;
         int depthCount =
             getCount(searchImage, scale,
                      transformCombinations[row][col][depth]->rotation, origin);
@@ -142,24 +213,36 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
         }
       }
 
-      edgeCounts[make_pair(x, y)] = count;
+      /* Check to see if the count is within bounds: */
+      if (checkBounds(scale.first, scale.second, count)) {
+        edgeCounts[make_pair(row, col)] = count;
+      }
+
+      /* Increment y to the next quadrant in the middle: */
+      yIncrement += (y + 1) * yIncrement;
     }
+
+    /* Increment x to the next quadrant in the middle: */
+    xIncrement += (x + 1) * xIncrement;
   }
 
-  /* If the count is greater than the bounds, go into the given cell and divide
-   * and conquer: */
+  /* If the count is greater than the bounds, go into the given cell and
+   * divide and conquer: */
   for (auto it = edgeCounts.begin(); it != edgeCounts.end(); ++it) {
-    if (it->second > bounds) {
-      pair<int, int> newStartingPoint =
-          make_pair(it->first.first, it->first.second);
-      greatestCount = divideAndConquer(searchImage, origin, newStartingPoint,
-                                       newDimensions, it->second);
-      if (greatestCount != -1) {
-        return greatestCount;
-      }
+
+    /* Have new origin be upper right hand of the matched quadrant: */
+    int newRow = it->first.first - (dimensions.first / bucketSize);
+    int newCol = it->first.second - (dimensions.second / bucketSize);
+    pair<int, int> newPoint = make_pair(newRow, newCol);
+
+    /* Dive and conquer on that new origin: */
+    greatestCount = divideAndConquerScale(searchImage, origin, newPoint,
+                                          newDimensions, it->second);
+    if (greatestCount != -1) {
+      return greatestCount;
     }
   }
-  return -1;
+  return greatestCount;
 }
 
 /* Purpose: To calculate the count given the transformation.
@@ -237,6 +320,19 @@ bool ObjectRecognition::checkNeighbors(const Mat &searchImage, double row,
   }
 
   return false;
+}
+
+/* Purpose: To check the bound of a given transformed image.
+ * Pre-conditions: None.
+ * Post-conditions: Returns true if the image is within its bound.  */
+bool ObjectRecognition::checkBounds(double xScale, double yScale,
+                                    int numberOfEdges) const {
+  double scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+  double newEdgeCount = exemplarEdges * scaleFactor;
+  double edgeBound = newEdgeCount * .2;
+
+  return (numberOfEdges > exemplarEdges - edgeBound &&
+          numberOfEdges < exemplarEdges + edgeBound);
 }
 
 /* Purpose: To create a transformation space for the exemplar.
@@ -321,3 +417,31 @@ int ObjectRecognition::dimensionSize(double transform, double increment) const {
 
   return static_cast<int>(size);
 }
+
+/* MAY NEED LATER */
+
+///* Iterate through the number of translations: */
+// for (int row = 0; row < searchImage.rows; row += 5) {
+//  for (int col = 0; col < searchImage.cols; col += 5) {
+
+//    /* int r = transformCombinations.size();
+//     int c = transformCombinations[0].size();
+//     int d = transformCombinations[0][0].size();
+//     int total = r * d * c; */
+
+//    /* Dive and conquer the transformation space at a specific translation:
+//    */ pair<int, int> dimensions; dimensions.first =
+//    dimensionSize(maxXScale, incrementScale); dimensions.second =
+//    dimensionSize(maxYScale, incrementScale); greatestCount =
+//    divideAndConquerScale(searchImage, make_pair(row, col),
+//                                          make_pair(0, 0), dimensions, -1);
+
+//    /* Check to see if there was a match: */
+//    if (greatestCount != -1) {
+//      cout << "Exemplar Edges: " << exemplarEdges << endl;
+//      cout << "Count: " << greatestCount << endl;
+//      cout << "RETURNED TRUE." << endl;
+//      return true;
+//    }
+//  }
+//}
