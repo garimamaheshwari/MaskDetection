@@ -52,7 +52,7 @@ bool ObjectRecognition::match(Mat &searchImage) {
   /* Divide and conquer the translation of an image: */
   pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
   int greatestCount =
-      divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1);
+      divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1, -1);
 
   /* Check to see if there was a match. If there is, return true. Otherwise,
    * return false: */
@@ -75,7 +75,7 @@ bool ObjectRecognition::match(Mat &searchImage) {
 int ObjectRecognition::divideAndConquer(const Mat &searchImage,
                                         pair<int, int> startingPoint,
                                         pair<int, int> dimensions,
-                                        int greatestCount) const {
+                                        int currentCount, int greatestCount) const {
   /* Check if it meets the threshold: */
   if (greatestCount > exemplarEdges - edgeThreshold &&
       greatestCount < exemplarEdges + edgeThreshold) {
@@ -116,7 +116,7 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
       dimensionsScale.first = dimensionSize(maxXScale, incrementScale);
       dimensionsScale.second = dimensionSize(maxYScale, incrementScale);
       int count = divideAndConquerScale(searchImage, make_pair(row, col),
-                                        make_pair(0, 0), dimensionsScale, -1);
+                                        make_pair(0, 0), dimensionsScale, -1, -1);
 
       /* Check to see if there was a match: */
       if (count != -1) {
@@ -134,17 +134,16 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
   /* If the count is greater than the bounds, go into the given cell and divide
    * and conquer: */
   for (auto it = edgeCounts.begin(); it != edgeCounts.end(); ++it) {
-    if (it->second > bounds) {
-      pair<int, int> newStartingPoint =
-          make_pair(it->first.first, it->first.second);
-      greatestCount = divideAndConquer(searchImage, newStartingPoint,
-                                       newDimensions, it->second);
-      if (greatestCount != -1) {
-        return greatestCount;
-      }
-    }
+      /* Have new origin be upper right hand of the matched quadrant: */
+      int newRow = it->first.first - (dimensions.first / bucketSize);
+      int newCol = it->first.second - (dimensions.second / bucketSize);
+      pair<int, int> newPoint = make_pair(newRow, newCol);
+      greatestCount = max(it->second, greatestCount);
+      currentCount = divideAndConquer(searchImage, newPoint,
+                                       newDimensions, it->second, greatestCount);
+    
   }
-  return -1;
+  return greatestCount;
 }
 
 /* Purpose: Divide and conquer in the transformation space.
@@ -155,8 +154,8 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
                                              pair<int, int> translation,
                                              pair<int, int> startingPoint,
                                              pair<int, int> dimensions,
-                                             int greatestCount) const {
-  /* Check if it meets the threshold: */
+                                             int currentCount, int greatestCount) const {
+  ///* Check if it meets the threshold: */
   if (greatestCount > exemplarEdges - edgeThreshold &&
       greatestCount < exemplarEdges + edgeThreshold) {
     return greatestCount;
@@ -198,12 +197,12 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
 
       /* Keep track of the highest count at a given scale transformation: */
       int count = 0;
+      scale.first = transformCombinations[row][col][0]->xScale;
+      scale.second = transformCombinations[row][col][0]->yScale;
 
       /* Iterate through multiple rotations, finding the best match: */
       for (int depth = 0; depth < transformCombinations[row][col].size();
            ++depth) {
-        scale.first = transformCombinations[row][col][depth]->xScale;
-        scale.second = transformCombinations[row][col][depth]->yScale;
         int depthCount =
             getCount(searchImage, scale,
                      transformCombinations[row][col][depth]->rotation, origin);
@@ -215,7 +214,7 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
 
       /* Check to see if the count is within bounds: */
       if (checkBounds(scale.first, scale.second, count)) {
-        edgeCounts[make_pair(row, col)] = count;
+        edgeCounts[make_pair(row, col)] = scaledEdges(scale.first,scale.second, count);
       }
 
       /* Increment y to the next quadrant in the middle: */
@@ -236,13 +235,13 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
     pair<int, int> newPoint = make_pair(newRow, newCol);
 
     /* Dive and conquer on that new origin: */
-    greatestCount = divideAndConquerScale(searchImage, origin, newPoint,
-                                          newDimensions, it->second);
-    if (greatestCount != -1) {
-      return greatestCount;
-    }
+  
+    greatestCount = max(it->second, greatestCount);
+    currentCount = divideAndConquerScale(searchImage, origin, newPoint, newDimensions,
+                              it->second, greatestCount);
   }
   return greatestCount;
+
 }
 
 /* Purpose: To calculate the count given the transformation.
@@ -333,6 +332,15 @@ bool ObjectRecognition::checkBounds(double xScale, double yScale,
 
   return (numberOfEdges > exemplarEdges - edgeBound &&
           numberOfEdges < exemplarEdges + edgeBound);
+}
+
+/* Purpose: To convert a scale number of edges to scalex = 1 and scaley = 1.
+ * Pre-conditions: xScale value, yScale value, and the number of edges
+ * Post-conditions: Returns the number of edges scaled to 1 */
+int ObjectRecognition::scaledEdges(double xScale, double yScale,
+                                   int numberOfEdges) const {
+  double scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+  return numberOfEdges / scaleFactor;
 }
 
 /* Purpose: To create a transformation space for the exemplar.
