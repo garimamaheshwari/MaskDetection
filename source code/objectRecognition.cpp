@@ -14,7 +14,13 @@
 ObjectRecognition::ObjectRecognition(const Mat &exemplar) {
   this->exemplar = exemplar.clone();
   maxXScale = maxPixelValue / exemplar.rows;
+  if (maxXScale > 2.0) {
+    maxXScale = 2.0;
+  }
   maxYScale = maxPixelValue / exemplar.cols;
+  if (maxYScale > 2.0) {
+    maxYScale = 2.0;
+  }
 
   /* Count number of edges in exemplar image: */
   exemplarEdges = 0;
@@ -50,23 +56,53 @@ ObjectRecognition::~ObjectRecognition() {
  * in the image. */
 bool ObjectRecognition::match(Mat &searchImage) {
   /* Divide and conquer the translation of an image: */
-  pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
-  int greatestCount =
-      divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1, -1);
+  //pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
+  //int greatestCount =
+  //    divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1, -1);
 
-  /* Check to see if there was a match. If there is, return true. Otherwise,
-   * return false: */
-  if (greatestCount != -1) {
-    cout << "Exemplar Edges: " << exemplarEdges << endl;
-    cout << "Count: " << greatestCount << endl;
-    cout << "RETURNED TRUE." << endl;
-    return true;
+  ///* Check to see if there was a match. If there is, return true. Otherwise,
+  // * return false: */
+  //if (greatestCount != -1) {
+  //  cout << "Exemplar Edges: " << exemplarEdges << endl;
+  //  cout << "Count: " << greatestCount << endl;
+  //  cout << "RETURNED TRUE." << endl;
+  //  return true;
+  //}
+
+  //cout << "Exemplar Edges: " << exemplarEdges << endl;
+  //cout << "Count: " << greatestCount << endl;
+
+  //return false;
+
+    int greatestCount = 0;
+     for (int row = 0; row < searchImage.rows; row += 5) {
+    for (int col = 0; col < searchImage.cols; col += 5) {
+
+      /* int r = transformCombinations.size();
+       int c = transformCombinations[0].size();
+       int d = transformCombinations[0][0].size();
+       int total = r * d * c; */
+
+      /* Dive and conquer the transformation space at a specific translation:
+      */ pair<int, int> dimensions; 
+      dimensions.first = dimensionSize(maxXScale, incrementScale); 
+      dimensions.second =dimensionSize(maxYScale, incrementScale); 
+      
+      int count = divideAndConquerScale(searchImage, make_pair(row, col),
+                                            make_pair(0, 0), dimensions, -1, -1, 1);
+
+      /* Check to see if there was a match: */
+      if (greatestCount < count) {
+        greatestCount = count; 
+
+      }
+    }
   }
-
-  cout << "Exemplar Edges: " << exemplarEdges << endl;
-  cout << "Count: " << greatestCount << endl;
-
-  return false;
+     cout << "Exemplar Edges: " << exemplarEdges << endl;
+     cout << "Count: " << greatestCount << endl;
+     cout << "RETURNED TRUE." << endl;
+     return greatestCount != -1;
+     
 }
 
 /* Purpose: Divide and conquer with translations.
@@ -80,6 +116,10 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
   if (greatestCount > exemplarEdges - edgeThreshold &&
       greatestCount < exemplarEdges + edgeThreshold) {
     return greatestCount;
+  }
+
+  if (currentCount > greatestCount) {
+    greatestCount = currentCount;  
   }
 
   /* Divide the dimensions by 2 to get 4 rectangles for divide and conquer: */
@@ -116,7 +156,7 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
       dimensionsScale.first = dimensionSize(maxXScale, incrementScale);
       dimensionsScale.second = dimensionSize(maxYScale, incrementScale);
       int count = divideAndConquerScale(searchImage, make_pair(row, col),
-                                        make_pair(0, 0), dimensionsScale, -1, -1);
+                                        make_pair(0, 0), dimensionsScale, -1, -1, 1);
 
       /* Check to see if there was a match: */
       if (count != -1) {
@@ -138,12 +178,11 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
       int newRow = it->first.first - (dimensions.first / bucketSize);
       int newCol = it->first.second - (dimensions.second / bucketSize);
       pair<int, int> newPoint = make_pair(newRow, newCol);
-      greatestCount = max(it->second, greatestCount);
       currentCount = divideAndConquer(searchImage, newPoint,
                                        newDimensions, it->second, greatestCount);
     
   }
-  return greatestCount;
+  return max(currentCount, greatestCount);
 }
 
 /* Purpose: Divide and conquer in the transformation space.
@@ -154,12 +193,18 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
                                              pair<int, int> translation,
                                              pair<int, int> startingPoint,
                                              pair<int, int> dimensions,
-                                             int currentCount, int greatestCount) const {
-  ///* Check if it meets the threshold: */
-  if (greatestCount > exemplarEdges - edgeThreshold &&
-      greatestCount < exemplarEdges + edgeThreshold) {
-    return greatestCount;
+                                             int currentCount, int previousCount, int levelOfDivide) const {
+ ///* ///* Check if it meets the threshold: */
+ // if (greatestCount > exemplarEdges - edgeThreshold &&
+ //     greatestCount < exemplarEdges + edgeThreshold) {
+ //   return greatestCount;
+ // }*/
+
+   if (currentCount < previousCount) {
+    return previousCount;
   }
+
+   previousCount = currentCount;
 
   /* Divide the dimensions by 2 to get 4 rectangles for divide and conquer: */
   pair<int, int> newDimensions =
@@ -168,7 +213,7 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
   /* Check to make sure there are no more cells to divide into. This means the
    * cell is too small to continue: */
   if (newDimensions.first == 0 || newDimensions.second == 0) {
-    return -1;
+    return previousCount;
   }
 
   /* Obtain the origin of where the exemplar will be placed: */
@@ -213,7 +258,7 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
       }
 
       /* Check to see if the count is within bounds: */
-      if (checkBounds(scale.first, scale.second, count)) {
+      if (checkBounds(scale.first, scale.second, count, levelOfDivide)) {
         edgeCounts[make_pair(row, col)] = scaledEdges(scale.first,scale.second, count);
       }
 
@@ -224,7 +269,8 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
     /* Increment x to the next quadrant in the middle: */
     xIncrement += (x + 1) * xIncrement;
   }
-
+   
+  int maxCount = 0;
   /* If the count is greater than the bounds, go into the given cell and
    * divide and conquer: */
   for (auto it = edgeCounts.begin(); it != edgeCounts.end(); ++it) {
@@ -235,12 +281,12 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
     pair<int, int> newPoint = make_pair(newRow, newCol);
 
     /* Dive and conquer on that new origin: */
-  
-    greatestCount = max(it->second, greatestCount);
     currentCount = divideAndConquerScale(searchImage, origin, newPoint, newDimensions,
-                              it->second, greatestCount);
+                              it->second, previousCount, levelOfDivide + 1);
+    maxCount = max(currentCount, maxCount);
   }
-  return greatestCount;
+  return maxCount;
+ 
 
 }
 
@@ -325,10 +371,11 @@ bool ObjectRecognition::checkNeighbors(const Mat &searchImage, double row,
  * Pre-conditions: None.
  * Post-conditions: Returns true if the image is within its bound.  */
 bool ObjectRecognition::checkBounds(double xScale, double yScale,
-                                    int numberOfEdges) const {
+                                    int numberOfEdges, int levelOfDivide) const {
   double scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
   double newEdgeCount = exemplarEdges * scaleFactor;
-  double edgeBound = newEdgeCount * .2;
+  double percentage = 1 - (levelOfDivide * .4);
+  double edgeBound = newEdgeCount * percentage;
 
   return (numberOfEdges > exemplarEdges - edgeBound &&
           numberOfEdges < exemplarEdges + edgeBound);
@@ -353,8 +400,8 @@ void ObjectRecognition::transformationSpace() {
   int rotationScale = dimensionSize(maxRotation, incrementRotation);
 
   /* Calculate the transformation combinations per (row, col, z): */
-  double xIncrement = 0;
-  double yIncrement = 0;
+  double xIncrement = 0.5;
+  double yIncrement = 0.5;
   int rotation = 0;
 
   /* Iterate through and calculate the xScale, yScale, and rotation
@@ -384,9 +431,11 @@ void ObjectRecognition::transformationSpace() {
 
     /* Increment xScale for next iteration: */
     xIncrement += incrementScale;
-    yIncrement = 0;
+    yIncrement = 0.5;
     transformCombinations.push_back(transformSpace);
+
   }
+
 }
 
 /* Purpose: To print transformation space;

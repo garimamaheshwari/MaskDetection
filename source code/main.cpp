@@ -36,9 +36,9 @@ int main(int argc, char *argv[]) {
   // trimImage(person2FV);
 
   /* NEGATIVE IMAGES */
-  // Mat butterfly = imread("butterfly.jpg");
-  // readImage(butterfly, "NEGATIVE Image");
-  // trimImage(butterfly);
+   //Mat butterfly = imread("butterfly.jpg");
+   //readImage(butterfly, "NEGATIVE Image");
+   //trimImage(butterfly);
 
   // Call smaller image function:
 
@@ -46,9 +46,10 @@ int main(int argc, char *argv[]) {
 
 
     exemplar.transformationSpace();
+ // exemplar.printTransformationSpace();
     exemplar.match(person1FV);
   // exemplar.match(person2FV);
-  // exemplar.match(butterfly);
+  //  exemplar.match(butterfly);
 
    //Mat test = imread("cottonMaskFV.jpg");
    //readImage(test, "Exemplar: Front View");

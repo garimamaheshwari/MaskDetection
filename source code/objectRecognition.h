@@ -67,7 +67,7 @@ private:
    *          in that translation. */
   int divideAndConquerScale(const Mat &searchImage, pair<int, int> translation,
                             pair<int, int> startingPoint,
-                            pair<int, int> dimensions, int currentCount, int greatestCount) const;
+                            pair<int, int> dimensions, int currentCount, int previousCount, int levelOfDivide) const;
   /* Purpose: To calculate the dimension size of a given transformation axis.
    * Pre-conditions: None.
    * Post-conditions: Returns a number that corresponds to an axis' size for the
@@ -85,7 +85,8 @@ private:
   /* Purpose: To check the bound of a given transformed image.
    * Pre-conditions: None.
    * Post-conditions: Returns true if the image is within its bound.  */
-  bool checkBounds(double xScale, double yScale, int numberOfEdges) const;
+  bool checkBounds(double xScale, double yScale, int numberOfEdges,
+                   int levelOfDivide) const;
 
   /* Purpose: To convert a scale number of edges to scalex = 1 and scaley = 1.
    * Pre-conditions: xScale value, yScale value, and the number of edges
