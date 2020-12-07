@@ -112,12 +112,21 @@ private:
   const int maxRotation = 180;
 
   /* Number of edges in exemplar: */
-  int exemplarEdges;
+  double exemplarEdges;
   const int edgeThreshold = 600;
   int bounds;
+  
+
+  /*Search image variables: */
+
+  double searchEdges;
+  double searchTotalPixels;
 
   /* Number of buckets: */
   const int bucketSize = 4;
+
+  /*The transformations that must occur for the best counts stored*/
+  map <int, pair<Transformations* , pair<int, int>>> bestTransformation;
 };
 
 /* THINGS NOT USED ANYMORE. */

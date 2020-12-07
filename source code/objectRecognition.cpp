@@ -48,6 +48,7 @@ ObjectRecognition::~ObjectRecognition() {
         delete transformCombinations[row][col][depth];
     }
   }
+
 }
 
 /* Purpose: To perform object recognition on an exemplar and searchImage.
@@ -74,9 +75,23 @@ bool ObjectRecognition::match(Mat &searchImage) {
 
   //return false;
 
+
+    /* total number of pixels within a search image */
+  searchTotalPixels = searchImage.rows * searchImage.cols;
+
+    /* count number of edges within the searchImage */
+  searchEdges = 0;
+  for (int row = 0; row < searchImage.rows; ++row) {
+    for (int col = 0; col < searchImage.cols; ++col) {
+      if (searchImage.at<uchar>(row, col) == edge) {
+        searchEdges++;
+      }
+    }
+  }
+
     int greatestCount = 0;
-     for (int row = 0; row < searchImage.rows; row += 5) {
-    for (int col = 0; col < searchImage.cols; col += 5) {
+  for (int row = 0; row < searchImage.rows; row += 100) {
+      for (int col = 0;col < searchImage.cols; col += 100) {
 
       /* int r = transformCombinations.size();
        int c = transformCombinations[0].size();
@@ -182,6 +197,7 @@ int ObjectRecognition::divideAndConquer(const Mat &searchImage,
                                        newDimensions, it->second, greatestCount);
     
   }
+
   return max(currentCount, greatestCount);
 }
 
@@ -229,6 +245,7 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
   int yIncrement = dimensions.second / bucketSize;
   pair<double, double> scale = make_pair(0, 0);
 
+  int bestRotation;
   /* Divide and conquer: */
   for (int x = 1; x < 3; ++x) {
     /* Re-initialize the y-increment for its next iteration: */
@@ -253,12 +270,19 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
                      transformCombinations[row][col][depth]->rotation, origin);
 
         if (depthCount > count) {
+          bestRotation = depth;
           count = depthCount;
         }
       }
 
       /* Check to see if the count is within bounds: */
       if (checkBounds(scale.first, scale.second, count, levelOfDivide)) {
+        /*Store bestCount in map with Score: */
+        /*Transformations *newT = new Transformations();*/
+        //newT->rotation = bestRotation;
+        //newT->xScale = scale.first;
+        //newT->yScale = scale.second;
+        //bestTransformation[count] = make_pair(newT, origin));
         edgeCounts[make_pair(row, col)] = scaledEdges(scale.first,scale.second, count);
       }
 
@@ -270,7 +294,7 @@ int ObjectRecognition::divideAndConquerScale(const Mat &searchImage,
     xIncrement += (x + 1) * xIncrement;
   }
    
-  int maxCount = 0;
+  int maxCount = previousCount;
   /* If the count is greater than the bounds, go into the given cell and
    * divide and conquer: */
   for (auto it = edgeCounts.begin(); it != edgeCounts.end(); ++it) {
@@ -372,12 +396,29 @@ bool ObjectRecognition::checkNeighbors(const Mat &searchImage, double row,
  * Post-conditions: Returns true if the image is within its bound.  */
 bool ObjectRecognition::checkBounds(double xScale, double yScale,
                                     int numberOfEdges, int levelOfDivide) const {
-  double scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+
+  double scaleFactor = 0;
+  if (xScale == yScale) {
+    scaleFactor = xScale;
+  } else {
+    scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+  }
   double newEdgeCount = exemplarEdges * scaleFactor;
-  double percentage = 1 - (levelOfDivide * .4);
+  double ratioSearch = searchEdges / searchTotalPixels;
+  double ratioExemplar = exemplarEdges / (exemplar.rows * exemplar.cols);
+  double difference = (ratioSearch - ratioExemplar);
+  double boundDecimal = 0.9;
+  //if (difference < 0) {
+  //  boundDecimal = 0.01;
+  //}else if (difference > 0.06) {
+  //  boundDecimal = 0.9;
+  //} else {
+  //  boundDecimal = 0.01;
+  //}
+  double percentage = 1 - (levelOfDivide * boundDecimal);
   double edgeBound = newEdgeCount * percentage;
 
-  return (numberOfEdges > exemplarEdges - edgeBound &&
+  return (numberOfEdges > abs(exemplarEdges - edgeBound) &&
           numberOfEdges < exemplarEdges + edgeBound);
 }
 
@@ -386,7 +427,12 @@ bool ObjectRecognition::checkBounds(double xScale, double yScale,
  * Post-conditions: Returns the number of edges scaled to 1 */
 int ObjectRecognition::scaledEdges(double xScale, double yScale,
                                    int numberOfEdges) const {
-  double scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+  double scaleFactor = 0;
+  if (xScale == yScale) {
+    scaleFactor = xScale;
+  } else {
+    scaleFactor = sqrt(pow(xScale, 2) + pow(yScale, 2));
+  }
   return numberOfEdges / scaleFactor;
 }
 

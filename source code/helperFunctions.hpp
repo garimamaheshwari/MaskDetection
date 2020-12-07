@@ -27,8 +27,17 @@ const pair<int, int> kernel(3, 3);
 void edgeDetection(Mat &image, string imageType, pair<double, double> sigma) {
   /* Convert image to gray-scale and then perform Gaussian blur on the image: */
   cvtColor(image, image, COLOR_BGR2GRAY);
+  // Display grey image
+   //namedWindow("Grey Image");
+   //imshow("Grey Image", image);
+   //waitKey(0);
+
   Size kSize(kernel.first, kernel.second);
   GaussianBlur(image, image, kSize, sigma.first, sigma.second);
+   //Display blurred image
+   //namedWindow("Blurred Image");
+   //imshow("Blurred Image", image);
+   //waitKey(0);
 
   /* Obtain edge detection thresholds: */
   double average = mean(image)[0];
