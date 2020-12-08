@@ -58,16 +58,18 @@ private:
   /* Purpose: Divide and conquer with translations.
    * Pre-conditions: None.
    * Post-conditions: Returns the highest count if there was a match. */
-  int divideAndConquer(const Mat &searchImage,
-                       pair<int, int> startingPoint, pair<int, int> dimensions, int currentCount,
-                       int greatestCount) const;
+  double divideAndConquer(const Mat &searchImage, pair<int, int> startingPoint,
+                          pair<int, int> dimensions, double currentCount,
+                          double previousCount, int levelOfDivide) const;
   /* Purpose: Divide and conquer in the transformation space.
    * Pre-conditions: None.
    * Post-conditions: Greatest count of edge matches in the transformation space
    *          in that translation. */
-  int divideAndConquerScale(const Mat &searchImage, pair<int, int> translation,
-                            pair<int, int> startingPoint,
-                            pair<int, int> dimensions, int currentCount, int previousCount, int levelOfDivide) const;
+  double divideAndConquerScale(const Mat &searchImage,
+                               pair<int, int> translation,
+                               pair<int, int> startingPoint,
+                               pair<int, int> dimensions, double currentCount,
+                               double previousCount, int levelOfDivide) const;
   /* Purpose: To calculate the dimension size of a given transformation axis.
    * Pre-conditions: None.
    * Post-conditions: Returns a number that corresponds to an axis' size for the
@@ -75,9 +77,11 @@ private:
   int dimensionSize(double transform, double increment) const;
   /* Purpose: To calculate the count given the transformation.
    * Pre-conditions: None.
-   * Post-conditions: Returns the count of the given point on the image.  */
-  int getCount(const Mat &searchImage, pair<double, double> scale, int rotation,
-               pair<int, int> origin) const;
+   * Post-conditions: returns the total edges of an transformed exemplar and the
+   *          total edge matches at a given point on the image  */
+  pair<double, double> getCount(const Mat &searchImage,
+                                pair<double, double> scale, int rotation,
+                                pair<int, int> origin) const;
   /* Purpose: To check the neighbors of a given (row, col) to see if edge.
    * Pre-conditions: None.
    * Post-conditions: Returns true if an edge exists.  */
@@ -91,7 +95,7 @@ private:
   /* Purpose: To convert a scale number of edges to scalex = 1 and scaley = 1.
    * Pre-conditions: xScale value, yScale value, and the number of edges
    * Post-conditions: Returns the number of edges scaled to 1 */
-  int scaledEdges(double xScale, double yScale, int numberOfEdges) const;
+  double scaledEdges(double xScale, double yScale, int numberOfEdges) const;
 
   /* Stores the exemplar: */
   Mat exemplar;
@@ -115,18 +119,13 @@ private:
   double exemplarEdges;
   const int edgeThreshold = 600;
   int bounds;
-  
 
   /*Search image variables: */
-
   double searchEdges;
   double searchTotalPixels;
 
   /* Number of buckets: */
   const int bucketSize = 4;
-
-  /*The transformations that must occur for the best counts stored*/
-  map <int, pair<Transformations* , pair<int, int>>> bestTransformation;
 };
 
 /* THINGS NOT USED ANYMORE. */

@@ -26,19 +26,25 @@ int main(int argc, char *argv[]) {
   /*TESTING IMAGE CROPPING*/
 
   // Reading person image:
- /* Mat person1FV = imread("person1.jpg");
+  Mat person1FV = imread("person1.jpg");
   readImage(person1FV, "Person 1: front view");
-  trimImage(person1FV);*/
+  trimImage(person1FV);
 
   // Reading person 2 image:
-  /* Mat person2FV = imread("person2.jpg");
-   readImage(person2FV, "Person 2: front view");
-   trimImage(person2FV);*/
+   //Mat person2FV = imread("person2.jpg");
+   //readImage(person2FV, "Person 2: front view");
+   //trimImage(person2FV);
+
+
+   Mat noperson = imread("noMaskPerson.jpg");
+   readImage(noperson, "Person 1: no mask");
+   trimImage(noperson);
+
 
   /* NEGATIVE IMAGES */
-   Mat butterfly = imread("butterfly.jpg");
-   readImage(butterfly, "NEGATIVE Image");
-   trimImage(butterfly);
+   //Mat butterfly = imread("butterfly.jpg");
+   //readImage(butterfly, "NEGATIVE Image");
+   //trimImage(butterfly);
 
   // Call smaller image function:
 
@@ -47,9 +53,10 @@ int main(int argc, char *argv[]) {
 
     exemplar.transformationSpace();
  // exemplar.printTransformationSpace();
-  /*  exemplar.match(person1FV);*/
-   /*exemplar.match(person2FV);*/
-    exemplar.match(butterfly);
+ // exemplar.match(person1FV);
+ //  exemplar.match(person2FV);
+  //  exemplar.match(butterfly);
+    exemplar.match(noperson);
 
    //Mat test = imread("cottonMaskFV.jpg");
    //readImage(test, "Exemplar: Front View");
