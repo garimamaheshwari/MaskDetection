@@ -30,6 +30,9 @@ struct Transformations {
   int rotation;
 };
 
+/* Keeps track of the best transformation: */
+// static map<double, pair<Transformations, pair<int, int>>> bestTransformation;
+
 class ObjectRecognition {
 public:
   /* Purpose: Constructor to create object and initialize data members.
@@ -44,6 +47,9 @@ public:
    * Pre-conditions: searchImage is a valid image (e.g., not .gif).
    * Post-conditions: Returns true if the exemplar is found in the image. */
   bool match(Mat &searchImage);
+
+  /* FUNCTIONS USED FOR THE TRANSFORMATION SPACE */
+
   /* Purpose: To create a transformation space for the exemplar.
    * Pre-conditions: None.
    * Post-conditions: Creates a transformation space for scaling/rotation. */
@@ -55,8 +61,10 @@ public:
   void printTransformationSpace() const;
 
 private:
+  /* FUNCTIONS USED FOR DIVIDE AND CONQUER */
+
   /* Purpose: Divide and conquer with translations.
-   * Pre-conditions: None.
+   * Pre-conditions: All parameters are valid.
    * Post-conditions: Returns the highest count if there was a match. */
   double divideAndConquer(const Mat &searchImage, pair<int, int> startingPoint,
                           pair<int, int> dimensions, double currentCount,
@@ -70,11 +78,16 @@ private:
                                pair<int, int> startingPoint,
                                pair<int, int> dimensions, double currentCount,
                                double previousCount, int levelOfDivide) const;
-  /* Purpose: To calculate the dimension size of a given transformation axis.
+
+  /* FUNCTION USED FOR BOUNDS CHECKING */
+
+  /* Purpose: To check the bound of a given transformed image.
    * Pre-conditions: None.
-   * Post-conditions: Returns a number that corresponds to an axis' size for the
-   *          transformation space. */
-  int dimensionSize(double transform, double increment) const;
+   * Post-conditions: Returns true if the ratio is within its bound.  */
+  bool checkBounds(double ratio, int levelOfDivide) const;
+
+  /* FUNCTIONS USED FOR FINDING MATCH EDGES */
+
   /* Purpose: To calculate the count given the transformation.
    * Pre-conditions: None.
    * Post-conditions: returns the total edges of an transformed exemplar and the
@@ -86,16 +99,22 @@ private:
    * Pre-conditions: None.
    * Post-conditions: Returns true if an edge exists.  */
   bool checkNeighbors(const Mat &searchImage, double row, double col) const;
-  /* Purpose: To check the bound of a given transformed image.
-   * Pre-conditions: None.
-   * Post-conditions: Returns true if the image is within its bound.  */
-  bool checkBounds(double xScale, double yScale, int numberOfEdges,
-                   int levelOfDivide) const;
 
-  /* Purpose: To convert a scale number of edges to scalex = 1 and scaley = 1.
-   * Pre-conditions: xScale value, yScale value, and the number of edges
-   * Post-conditions: Returns the number of edges scaled to 1 */
-  double scaledEdges(double xScale, double yScale, int numberOfEdges) const;
+  /* HELPER FUNCTIONS */
+
+  /* Purpose: Compute the total amount of edges in an image.
+   * Pre-conditions: image is valid.
+   * Post-conditions: Returns the number of edges in the image. */
+  int computeEdgeTotals(const Mat &image) const;
+  /* Purpose: Draw an outline of the match on the searchImage.
+   * Pre-conditions: ratio has been computed and it is a good match.
+   * Post-conditions: Outputs the image with an outline of the match. */
+ // void drawMatch(const Mat &image, double ratio) const;
+  /* Purpose: To calculate the dimension size of a given transformation axis.
+   * Pre-conditions: None.
+   * Post-conditions: Returns a number that corresponds to an axis' size for the
+   *          transformation space. */
+  int dimensionSize(double transform, double increment) const;
 
   /* Stores the exemplar: */
   Mat exemplar;
@@ -105,7 +124,6 @@ private:
   /* Stores the maximum size of scaling an image: */
   double maxXScale;
   double maxYScale;
-
   /* Variable for max size for an exemplar image.
    * Used to calculate the maximum size of scaling: */
   const int maxPixelValue = 750;
@@ -114,23 +132,14 @@ private:
   /* Variables used for the increment when rotating an image: */
   const int incrementRotation = 60;
   const int maxRotation = 180;
-
   /* Number of edges in exemplar: */
   double exemplarEdges;
   const int edgeThreshold = 600;
-  int bounds;
-
   /*Search image variables: */
   double searchEdges;
-  double searchTotalPixels;
-
+  double searchSize;
   /* Number of buckets: */
   const int bucketSize = 4;
+  /* Max size of a scale: */
+  const int maxScale = 2;
 };
-
-/* THINGS NOT USED ANYMORE. */
-
-/*
- *  // 1 2D array: translation in x and y
- *  Mat translations;
- */
