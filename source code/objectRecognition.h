@@ -31,7 +31,7 @@ struct Transformations {
 };
 
 /* Keeps track of the best transformation: */
-// static map<double, pair<Transformations, pair<int, int>>> bestTransformation;
+static map<double, pair<Transformations, pair<int, int>>> bestTransformation;
 
 class ObjectRecognition {
 public:
@@ -46,7 +46,7 @@ public:
   /* Purpose: To perform object recognition on an exemplar and searchImage.
    * Pre-conditions: searchImage is a valid image (e.g., not .gif).
    * Post-conditions: Returns true if the exemplar is found in the image. */
-  bool match(Mat &searchImage);
+  bool match(Mat &searchImage, const Mat &original, string name);
 
   /* FUNCTIONS USED FOR THE TRANSFORMATION SPACE */
 
@@ -106,40 +106,42 @@ private:
    * Pre-conditions: image is valid.
    * Post-conditions: Returns the number of edges in the image. */
   int computeEdgeTotals(const Mat &image) const;
-  /* Purpose: Draw an outline of the match on the searchImage.
-   * Pre-conditions: ratio has been computed and it is a good match.
-   * Post-conditions: Outputs the image with an outline of the match. */
- // void drawMatch(const Mat &image, double ratio) const;
   /* Purpose: To calculate the dimension size of a given transformation axis.
    * Pre-conditions: None.
    * Post-conditions: Returns a number that corresponds to an axis' size for the
    *          transformation space. */
   int dimensionSize(double transform, double increment) const;
+  /* Purpose: Draw an outline of the match on the searchImage.
+   * Pre-conditions: ratio has been computed and it is a good match.
+   * Post-conditions: Outputs the image with an outline of the match. */
+  void drawMatch(const Mat &image, double ratio, string name) const;
 
-  /* Stores the exemplar: */
+  /* EXEMPLAR VARIABLES */
   Mat exemplar;
+  double exemplarEdges;
+
+  /* SEARCH IMAGE VARIABLES */
+  double searchEdges;
+  double searchSize;
+
+  /* TRANSFORMATION SPACE VARIABLES */
+
   /* 3D vector that stores rotation and xScale and yScale combinations.
    * Used for transformation space: */
   vector<vector<vector<Transformations *>>> transformCombinations;
+  /* Number of buckets: */
+  const int bucketSize = 4;
+  /* Variable for max size for an exemplar image. Used to calculate the maximum
+   * size of scaling: */
+  const int maxPixelValue = 750;
+  /* Max size of a scale: */
+  const int maxScale = 2;
   /* Stores the maximum size of scaling an image: */
   double maxXScale;
   double maxYScale;
-  /* Variable for max size for an exemplar image.
-   * Used to calculate the maximum size of scaling: */
-  const int maxPixelValue = 750;
   /* Variable used for the increment when scaling an image: */
   const double incrementScale = 0.10;
   /* Variables used for the increment when rotating an image: */
   const int incrementRotation = 60;
   const int maxRotation = 180;
-  /* Number of edges in exemplar: */
-  double exemplarEdges;
-  const int edgeThreshold = 600;
-  /*Search image variables: */
-  double searchEdges;
-  double searchSize;
-  /* Number of buckets: */
-  const int bucketSize = 4;
-  /* Max size of a scale: */
-  const int maxScale = 2;
 };

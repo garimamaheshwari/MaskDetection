@@ -3,7 +3,8 @@
  *
  * Description: A .hpp file that has multiple tests for the object recognition.
  * Contains tests for cotton-masks with negative and positive tests.
- * Uses a variety of search images that have a variety of colors and features. */
+ * Uses a variety of search images that have a variety of colors and features.
+ */
 #include "helperFunctions.hpp"
 #include <assert.h>
 #include <iostream>
@@ -13,70 +14,132 @@
 
 using namespace cv;
 
-/* Purpose: Test front-view cotton mask with multiple search images.
+/* Purpose: Positive testing on front-view cotton mask with search images.
  * Pre-conditions: None.
- * Post-conditions: Passes all tests. */
-//void cottonMaskTestFVPos() {
-//  /* EXEMPLAR */
-//  /* Read in front-view mask exemplar: */
-//  Mat exemplar = imread("cottonMaskFV.jpg");
-//  
-//  /* Make clones of mask exemplar: */
-//  Mat originalEx = exemplar.clone();
-//  Mat edgedEx = exemplar.clone();
-//
-//  /* Perform edge detection on the exemplar image: */
-//  readImage(edgedEx, "Exemplar Image (front-view)");
-//  /* Trim image: */
-//  trimImage(edgedEx, originalEx);
-//
-//  /* Read in positive search image: */
-//  Mat positive1FV = imread("person1.jpg");
-//  Mat positive2FV = imread("person2.jpg");
-//
-//  /* Read in negative search image: */
-//  Mat false1FV = imread("noPerson.jpg");
-//  Mat false2FV = imread("butterfly.jpg");
-//
-//  /* Perform edge detection on the search images: */
-//  readImage(positive1FV, "Person1 wearing mask (front-view)");
-//  readImage(positive2FV, "Person2 wearing mask (front-view)");
-//  readImage(false1FV, "Person not wearing mask (front-view)");
-//  readImage(false2FV, "Butterfly image");
-//
-//  /* Create objectRecognition object for exemplar. */
-//  ObjectRecognition cottonMask(exemplar);
-//
-//  /* Test positive images. */
-//  assert(cottonMask.match(positive1FV, ));
-//  assert(cottonMask.match(positive2FV));
-//
-//  /* Test negative image. */
-//  assert(!cottonMask.match(falseFV));
-//}
-//
-//void cottonMaskTestFVNeg() {
-//  /* EXEMPLAR */
-//  /* Read in front-view mask exemplar: */
-//  Mat exemplar = imread("cottonMaskFV.jpg");
-//
-//  /* Make clones of mask exemplar: */
-//  Mat originalEx = exemplar.clone();
-//  Mat edgedEx = exemplar.clone();
-//
-//  /* Perform edge detection on the exemplar image: */
-//  readImage(edgedEx, "Exemplar Image (front-view)");
-//  /* Trim image: */
-//  trimImage(edgedEx, originalEx);
-//
-//  /* Read in positive search image: */
-//  Mat positive1FV = imread("person1.jpg");
-//  Mat positive2FV = imread("person2.jpg");
-//
-//  /* Read in negative search image: */
-//  Mat false1FV = imread("noPerson.jpg");
-//  Mat false2FV = imread("butterfly.jpg");
-//
-//
-//
-//}
+ * Post-conditions: Passes the test successfully. */
+void cottonMaskTestFVPos() {
+  /* EXEMPLAR */
+
+  /* Read in front-view mask exemplar: */
+  Mat exemplar = imread("cottonMaskFV.jpg");
+
+  /* Make clones of mask exemplar: */
+  Mat originalEx = exemplar.clone();
+  Mat edgedEx = exemplar.clone();
+
+  /* Perform edge detection on the exemplar image: */
+  readImage(edgedEx, "Exemplar Image (front-view)");
+  /* Crop images: */
+  trimImage(edgedEx, originalEx);
+
+  /* POSITIVE TESTING */
+
+  /* Create objectRecognition object for exemplar: */
+  ObjectRecognition cottonMask(edgedEx);
+
+  /* Create transformation space: */
+  cottonMask.transformationSpace();
+
+  /* Test positive image: */
+  assert(cottonMask.match(edgedEx, originalEx, "truePositive"));
+}
+
+/* Purpose: Negative testing on front-view cotton mask with a search image.
+ * Pre-conditions: None.
+ * Post-conditions: Passes the tests successfully. */
+void cottonMaskTestFVNeg() {
+  /* EXEMPLAR */
+
+  /* Read in front-view mask exemplar: */
+  Mat exemplar = imread("cottonMaskFV.jpg");
+
+  /* Make clone of mask exemplar: */
+  Mat edgedEx = exemplar.clone();
+
+  /* Perform edge detection on the exemplar image: */
+  readImage(edgedEx, "Exemplar Image (front-view)");
+  /* Crop images: */
+  trimImage(edgedEx, exemplar);
+
+  /* Read in negative search image: */
+  Mat originalFalse = imread("personWithNoMask.jpg");
+  Mat falseFV = originalFalse.clone();
+
+  /* Read in image and crop images: */
+  readImage(falseFV, "Person not wearing mask (front-view)");
+  trimImage(falseFV, originalFalse);
+
+  /* Create objectRecognition object for exemplar: */
+  ObjectRecognition cottonMask(exemplar);
+
+  /* Create transformation space: */
+  cottonMask.transformationSpace();
+
+  /* Test negative image: */
+  assert(!cottonMask.match(falseFV, originalFalse, "trueFalse"));
+  cout << endl;
+
+  /* Read in negative search image: */
+  originalFalse = imread("personWithNoMask2.jpg");
+  falseFV = originalFalse.clone();
+
+  /* Read in image and crop images: */
+  readImage(falseFV, "Person2 not wearing mask (front-view)");
+  trimImage(falseFV, originalFalse);
+
+  /* Test negative image: */
+  assert(!cottonMask.match(falseFV, originalFalse, "trueFalse2"));
+  cout << endl;
+
+  /* Read in a butterfly search image: */
+  originalFalse = imread("person2.jpg");
+  falseFV = originalFalse.clone();
+
+  /* Read in image and crop images: */
+  readImage(falseFV, "Person3 not wearing a mask");
+  trimImage(falseFV, originalFalse);
+
+  /* Test false negative image. Expected to get close to the mask: */
+  assert(!cottonMask.match(falseFV, originalFalse, "trueFalse3"));
+}
+
+/* Purpose: To illustrate false negatives and positives.
+ * Pre-conditions: None.
+ * Post-conditions: Passes the assert statements on images. */
+void cottonMaskFVIncorrectResults() {
+  /* EXEMPLAR */
+
+  /* Read in front-view mask exemplar: */
+  Mat exemplar = imread("cottonMaskFV.jpg");
+
+  /* Make clone of mask exemplar: */
+  Mat edgedEx = exemplar.clone();
+
+  /* Perform edge detection on the exemplar image: */
+  readImage(edgedEx, "Exemplar Image (front-view)");
+  /* Crop images: */
+  trimImage(edgedEx, exemplar);
+
+  /* FALSE POSITIVES */
+
+  /* Read in a mask search image: */
+  Mat originalPos = imread("person1.jpg");
+  Mat falsePos = originalPos.clone();
+
+  /* Read in image and crop images: */
+  readImage(falsePos, "Person wearing mask (front-view)");
+  trimImage(falsePos, originalPos);
+
+  /* Create objectRecognition object for exemplar: */
+  ObjectRecognition cottonMask(edgedEx);
+
+  /* Create transformation space: */
+  cottonMask.transformationSpace();
+
+  /* Test false negative image. Expected to get close to the mask, but return
+   * false even if true: */
+  assert(cottonMask.match(falsePos, originalPos, "falsePos(incorrectMatch)"));
+  cout << endl;
+
+  /* FALSE NEGATIVES */
+}

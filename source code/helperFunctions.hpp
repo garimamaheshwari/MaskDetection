@@ -3,7 +3,7 @@
  *
  * Description: Helper functions for reading in images and performing edge
  * detection, so that the exemplar and search images are ready for object
- * detection. */
+ * recognition. */
 #include "objectRecognition.h"
 #include <iostream>
 #include <opencv2/core.hpp>
@@ -13,18 +13,22 @@
 using namespace cv;
 using namespace std;
 
+/* HARD-CODED VALUES FOR GAUSSIAN BLUR AND EDGE DETECTION */
+
+/* Kernel size and sigmas for Gaussian blur: */
+const pair<int, int> kernel(3, 3);
+const pair<double, double> sigma = make_pair(2, 2);
+
 /* Threshold deviation to automatically detect minimum and maximum threshold in
- * edge detection. */
+ * edge detection: */
 const int maxThresholdDev = 30;
 const int minThresholdDev = 60;
-/* Kernel size for blurring. */
-const pair<int, int> kernel(3, 3);
 
 /* Purpose: To perform edge detection on an image.
  * Pre-conditions: Parameters are valid.
  * Post-conditions: Changes the color image to an edge-detected image and
  *            outputs this image. */
-void edgeDetection(Mat &image, string imageType, pair<double, double> sigma) {
+void edgeDetection(Mat &image, string imageType) {
   /* Convert image to gray-scale and then perform Gaussian blur on the image: */
   cvtColor(image, image, COLOR_BGR2GRAY);
   // Display grey image
@@ -49,9 +53,9 @@ void edgeDetection(Mat &image, string imageType, pair<double, double> sigma) {
   Canny(image, image, threshold.first, threshold.second);
 
   /* Display the edge-detected image to the output window: */
-  namedWindow(imageType + ": Canny Edge Detection output");
-  imshow(imageType + ": Canny Edge Detection output", image);
-  waitKey(0);
+  //namedWindow(imageType + ": Canny Edge Detection output");
+  //imshow(imageType + ": Canny Edge Detection output", image);
+  //waitKey(0);
 }
 
 /* Purpose: Read in an image and perform edge detection on it.
@@ -59,18 +63,18 @@ void edgeDetection(Mat &image, string imageType, pair<double, double> sigma) {
  * Post-conditions: Transforms image by having it undergo edge detection. */
 void readImage(Mat &image, string imageType) {
   /* Display original image for comparison: */
-  namedWindow(imageType);
-  imshow(imageType, image);
-  waitKey(0);
+  //namedWindow(imageType);
+  //imshow(imageType, image);
+  //waitKey(0);
 
   /* Perform edge detection on image: */
-  edgeDetection(image, imageType, make_pair(2.0, 2.0));
+  edgeDetection(image, imageType);
 }
 
 /* Purpose: Read in an input image and trims sides for minimum image size with
  * maximum edges Pre-conditions: input is valid (e.g., not .gif).
  * Post-conditions: Transforms image by trimming sides */
-void trimImage(Mat &input) {
+void trimImage(Mat &input, Mat &original) {
   /* Save row and col dimensions: */
   bool foundFirstEdge = false;
   int leastRow = 0;
@@ -83,7 +87,6 @@ void trimImage(Mat &input) {
     for (int col = 0; col < input.cols; ++col) {
       /* Check if edge: */
       if (input.at<uchar>(row, col) == edge) {
-
         /* Set first edge to be where the "rectangle of edges" begins: */
         if (!foundFirstEdge) {
           leastRow = row;
@@ -125,22 +128,11 @@ void trimImage(Mat &input) {
   namedWindow("Cropped Image");
   imshow("Cropped Image", input);
   waitKey(0);
+
+  original = original(newDim);
+
+  /* Print out new cropped image: */
+  namedWindow("Original Cropped Image");
+  imshow("Original Cropped Image", original);
+  waitKey(0);
 }
-
-/* THINGS NOT IN USE. */
-
-/* In edge detection function. */
-
-// Display blurred image
-// namedWindow("Blurred Image");
-// imshow("Blurred Image", image);
-// waitKey(0);
-
-// Mat scaled;
-////checking scaling
-// resize(image, scaled, scaled.size(), 2.5, 2.5);
-
-//// Display edge detection results
-// namedWindow(imageType + ": Canny Edge Detection output");
-// imshow(imageType + ": Canny Edge Detection output", scaled);
-// waitKey(0);

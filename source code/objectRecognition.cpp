@@ -31,6 +31,9 @@ ObjectRecognition::ObjectRecognition(const Mat &exemplar) {
 
   /* Count number of edges in exemplar image: */
   exemplarEdges = computeEdgeTotals(exemplar);
+
+  /* Initialize other data members: */
+  splitBy = 0;
 }
 
 /* Purpose: Destructor to remove dynamic memory.
@@ -49,37 +52,70 @@ ObjectRecognition::~ObjectRecognition() {
 }
 
 /* FUNCTIONS USED FOR OBJECT RECONGITION / DIVIDE AND CONQUER */
- 
+
 /* Purpose: To perform object recognition on an exemplar and searchImage.
  * Pre-conditions: searchImage is a valid image (e.g., not .gif) that has
  * already been cropped.
  * Post-conditions: Returns true if the exemplar is found in the image. */
-bool ObjectRecognition::match(Mat &searchImage) {
-  /* Calculate the edges in the searchImage and the size of the searchImage: */
-  searchEdges = computeEdgeTotals(searchImage); 
-  searchSize = searchImage.rows * searchImage.cols;
+bool ObjectRecognition::match(Mat &searchImage, const Mat &original, string name) {
+  /* Calculate the edges in the searchImage and the size of the searchImage to
+   * get ratio: */
+  searchEdges = computeEdgeTotals(searchImage);
+  searchSize = static_cast<double>(searchImage.rows) *
+               static_cast<double>(searchImage.cols);
+  double searchImageRatio = searchEdges / searchSize;
 
-  /* Divide and conquer the translation of an image: */
-  pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
-  double greatestRatio =
-      divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1, -1, 1);
+  double greatestRatio = 0;
+
+  /* If the image ratio of edges compared to pixels is high, use divide and
+   * conquer on translation: */
+  if (searchImageRatio > 0.05) {
+    /* Calculate dimensions of the search image: */
+    pair<int, int> dimensions = make_pair(searchImage.rows, searchImage.cols);
+
+    /* Divide and conquer the translation of an image: */
+    greatestRatio =
+        divideAndConquer(searchImage, make_pair(0, 0), dimensions, -1, -1, 1);
+
+  } else {
+    /* Calculate dimensions for the transformation space: */
+    pair<int, int> dimensions = make_pair(transformCombinations.size(),
+                                           transformCombinations[0].size());
+    double currentRatio = 0;
+
+    /* Iterate through the image to receive translation values for divide and
+     * conquer on scale: */
+    for (int r = 0; r < searchImage.rows; r += 25) {
+      for (int c = 0; c < searchImage.cols; c += 25) {
+        currentRatio =
+            divideAndConquerScale(searchImage, make_pair(r, c), make_pair(0, 0),
+                                  dimensions, -1, -1, 1);
+        if (currentRatio > greatestRatio) {
+          greatestRatio = currentRatio;
+        }
+      }
+    }
+  }
 
   /* Check to see if there was a match. If there is, return true. Otherwise,
    * return false: */
   if (greatestRatio > 0.70) {
-    cout << "RESULTS: " << endl;
+    cout << "RESULTS FOR " + name + ": " << endl;
     cout << "Person is wearing a mask. " << endl;
-    cout << "Match Percentage: " << greatestRatio * 100 << "%";
+    cout << "Match Percentage: " << greatestRatio * 100 << "%" << endl;
 
     /* Illustrate the match and save to the default directory: */
-    //drawMatch(original, greatestRatio);
+    drawMatch(original, greatestRatio, name);
 
     return true;
   }
 
-  cout << "RESULTS: " << endl;
+  cout << "RESULTS FOR " + name + ": " << endl;
   cout << "Person is not wearing a mask. " << endl;
-  cout << "Match Percentage: " << greatestRatio * 100 << "%";
+  cout << "Match Percentage: " << greatestRatio * 100 << "%" << endl;
+
+  /* Illustrate the non-match and save to the default directory: */
+  drawMatch(original, greatestRatio, name);
   return false;
 }
 
@@ -245,13 +281,13 @@ double ObjectRecognition::divideAndConquerScale(
       if (checkBounds(highestRatio, levelOfDivide)) {
         edgeCounts[make_pair(row, col)] = highestRatio;
 
-        ///* Create transformation object: */
-        //Transformations currentCombo;
-        //currentCombo.xScale = scale.first;
-        //currentCombo.yScale = scale.second;
-        //currentCombo.rotation = rotation;
+        /* Create transformation object: */
+        Transformations currentCombo;
+        currentCombo.xScale = scale.first;
+        currentCombo.yScale = scale.second;
+        currentCombo.rotation = rotation;
 
-        // bestTransformation[highestRatio] = make_pair(currentCombo, origin);
+        bestTransformation[highestRatio] = make_pair(currentCombo, origin);
       }
 
       /* Increment y to the next quadrant in the middle: */
@@ -278,7 +314,6 @@ double ObjectRecognition::divideAndConquerScale(
                               it->second, previousCount, levelOfDivide + 1);
     maxCount = max(currentCount, maxCount);
   }
-
   return maxCount;
 }
 
@@ -287,15 +322,14 @@ double ObjectRecognition::divideAndConquerScale(
 /* Purpose: To check the bound of a given transformed image.
  * Pre-conditions: None.
  * Post-conditions: Returns true if the ratio is within its bound.  */
-bool ObjectRecognition::checkBounds(double ratio,
-                                         int levelOfDivide) const {
+bool ObjectRecognition::checkBounds(double ratio, int levelOfDivide) const {
   /* Get the amount of edges per the size of the search image to get ratio: */
   double searchImageRatio = searchEdges / searchSize;
 
   /* If the search image has a lot of edges compared to its size, it must pass a
    * bigger decimal to go further into divide and conquer: */
-  if (searchImageRatio > 0.08) {
-    if (ratio > 0.3 * (levelOfDivide))
+  if (searchImageRatio > 0.06) {
+    if (ratio > 0.20 * (levelOfDivide))
       return true;
 
     return false;
@@ -315,8 +349,8 @@ bool ObjectRecognition::checkBounds(double ratio,
  * Pre-conditions: None.
  * Post-conditions: returns the total edges of an transformed exemplar and
  * the total edge matches at a given point on the image  */
-pair<double, double> ObjectRecognition::getCount(const Mat &searchImage, 
-                                                 pair<double, double> scale,  
+pair<double, double> ObjectRecognition::getCount(const Mat &searchImage,
+                                                 pair<double, double> scale,
                                                  int rotation,
                                                  pair<int, int> origin) const {
   int count = 0;
@@ -331,15 +365,8 @@ pair<double, double> ObjectRecognition::getCount(const Mat &searchImage,
       }
       totalEdges++;
 
-       /* Set the exemplar point with respect to origin: */
-      double newRow =
-          static_cast<double>(rowEx) + static_cast<double>(origin.first);
-      double newCol =
-          static_cast<double>(colEx) + static_cast<double>(origin.second);
-
-      /* Perform the scale transformation: */
-      newRow = static_cast<double>(newRow / scale.second);
-      newCol = static_cast<double>(newCol / scale.first);
+      double newRow = rowEx;
+      double newCol = colEx;
 
       /* Perform the rotation transformation and convert degrees to radians.
        * Then find cos and sin values: */
@@ -347,34 +374,19 @@ pair<double, double> ObjectRecognition::getCount(const Mat &searchImage,
       double cosVal = cos(rotation * (pi / 180));
       double sinVal = sin(rotation * (pi / 180));
 
-      double radianCol = (cosVal * newCol) + (sinVal * newRow);
-      double radianRow = (-sinVal * newCol) + (cosVal * newRow);
+      double radianRow = (sinVal * colEx) + (cosVal * rowEx);
+      double radianCol = (cosVal * colEx) + (-sinVal * rowEx);
 
-      newCol = radianCol;
       newRow = radianRow;
+      newCol = radianCol;
 
-      //double newRow = rowEx;
-      //double newCol = colEx;
+      /* Perform the scale transformation: */
+      newRow = static_cast<double>(newRow * scale.second);
+      newCol = static_cast<double>(newCol * scale.first);
 
-      ///* Perform the rotation transformation and convert degrees to radians.
-      // * Then find cos and sin values: */
-      //const double pi = 3.14159265;
-      //double cosVal = cos(rotation * (pi / 180));
-      //double sinVal = sin(rotation * (pi / 180));
-
-      //double radianRow = (sinVal * colEx) + (cosVal * rowEx);
-      //double radianCol = (cosVal * colEx) + (-sinVal * rowEx);
-
-      //newRow = radianRow;
-      //newCol = radianCol;
-
-      ///* Perform the scale transformation: */
-      //newRow = static_cast<double>(newRow * scale.second);
-      //newCol = static_cast<double>(newCol * scale.first);
-
-      ///* Set the exemplar point with respect to origin: */
-      //newRow += static_cast<double>(origin.first);
-      //newCol += static_cast<double>(origin.second);
+      /* Set the exemplar point with respect to origin: */
+      newRow += static_cast<double>(origin.first);
+      newCol += static_cast<double>(origin.second);
 
       /* Check if edge: */
       if (checkNeighbors(searchImage, newRow, newCol)) {
@@ -521,46 +533,46 @@ int ObjectRecognition::computeEdgeTotals(const Mat &image) const {
   return edgeSum;
 }
 
-///* Purpose: Draw an outline of the match on the searchImage.
-// * Pre-conditions: ratio has been computed and it is a good match.
-// * Post-conditions: Outputs the image with an outline of the match. */
-//void ObjectRecognition::drawMatch(const Mat &image, double ratio) const {
-//  /* Create a new image and clone the original: */
-//  Mat newImage = image.clone();
-//
-//  /* Get transformation from the best ratio: */
-//  pair<Transformations, pair<int, int>> transformation =
-//      bestTransformation[ratio];
-//
-//  /* Get the dimensions of the box: */
-//  int row = transformation.first.yScale * exemplar.rows;
-//  int col = transformation.first.xScale * exemplar.cols;
-//
-//  /* Get the starting point of the box: */
-//  int boxRow = transformation.second.first;
-//  int boxCol = transformation.second.second;
-//
-//  /* Get row ranges: */
-//  int endR = row + boxRow;
-//  if (endR > newImage.rows) {
-//    endR = newImage.rows - 1;
-//  }
-//
-//  /* Get col ranges: */
-//  int endC = col + boxCol;
-//  if (endC > newImage.cols) {
-//    endC = newImage.cols - 1;
-//  }
-//
-//  /* Draw line segments: */
-//  line(newImage, Point(boxRow, boxCol), Point(endR, col), (0, 255, 0), 3);
-//  line(newImage, Point(endR, col), Point(endR, endC), (0, 255, 0), 3);
-//  line(newImage, Point(endR, endC), Point(boxRow, endC), (0, 255, 0), 3);
-//  line(newImage, Point(boxRow, endC), Point(boxRow, boxCol), (0, 255, 0), 3);
-//
-//  /* Output to the window and save in the directory folder: */
-//  namedWindow("Edge-detected Image");
-//  imshow("Edge-detected Image", newImage);
-//  waitKey(0);
-//  imwrite("output.jpg", newImage);
-//}
+/* Purpose: Draw an outline of the match on the searchImage.
+ * Pre-conditions: ratio has been computed and it is a good match.
+ * Post-conditions: Outputs the image with an outline of the match. */
+void ObjectRecognition::drawMatch(const Mat &image, double ratio, string name) const {
+  /* Create a new image and clone the original: */
+  Mat newImage = image.clone();
+
+  /* Get transformation from the best ratio: */
+  pair<Transformations, pair<int, int>> transformation =
+      bestTransformation[ratio];
+
+  /* Get the dimensions of the box: */
+  int row = transformation.first.yScale * exemplar.rows;
+  int col = transformation.first.xScale * exemplar.cols;
+
+  /* Get the starting point of the box: */
+  int boxRow = transformation.second.first;
+  int boxCol = transformation.second.second;
+
+  /* Get row ranges: */
+  int endR = row + boxRow;
+  if (endR > newImage.rows) {
+    endR = newImage.rows - 1;
+  }
+
+  /* Get col ranges: */
+  int endC = col + boxCol;
+  if (endC > newImage.cols) {
+    endC = newImage.cols - 1;
+  }
+
+  /* Draw line segments: */
+  line(newImage, Point(boxCol, boxRow), Point(boxCol, endR), (0, 255, 0), 3);
+  line(newImage, Point(boxCol, endR), Point(endC, endR), (0, 255, 0), 3);
+  line(newImage, Point(endC, endR), Point(endC, boxRow), (0, 255, 0), 3);
+  line(newImage, Point(endC, boxRow), Point(boxCol, boxRow), (0, 255, 0), 3);
+
+  /* Output to the window and save in the directory folder: */
+  namedWindow("Edge-detected Image");
+  imshow("Edge-detected Image", newImage);
+  waitKey(0);
+  imwrite(name + ".jpg", newImage);
+}
