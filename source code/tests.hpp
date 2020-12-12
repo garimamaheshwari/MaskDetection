@@ -129,7 +129,21 @@ void cottonMaskFVIncorrectResults() {
   assert(cottonMask.match(falsePos, originalPos, "falsePos(incorrectMatch)"));
   cout << endl;
 
+  /* Read in images: */
+  originalPos = imread("butterfly.jpg");
+  falsePos = originalPos.clone();
+
+  /* Read in image and crop images: */
+  readImage(falsePos, "Butterfly");
+  trimImage(falsePos, originalPos);
+
+  /* Test false negative image. Expected to get close to the mask, but return
+   * false even if true: */
+  assert(cottonMask.match(falsePos, originalPos, "falsePos(noMask)"));
+  cout << endl;
+
   /* FALSE NEGATIVES */
+
   /* Read in a mask search image: */
   Mat originalNeg = imread("person2.jpg");
   Mat falseNeg = originalNeg.clone();
@@ -137,9 +151,6 @@ void cottonMaskFVIncorrectResults() {
   /* Read in image and crop images: */
   readImage(falseNeg, "Person wearing mask (front-view)");
   trimImage(falseNeg, originalNeg);
-
-  /* Create transformation space: */
-  cottonMask.transformationSpace();
 
   /* Test false negative image. Expected to get close to the mask, but return
    * false even if true: */
