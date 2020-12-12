@@ -31,9 +31,6 @@ ObjectRecognition::ObjectRecognition(const Mat &exemplar) {
 
   /* Count number of edges in exemplar image: */
   exemplarEdges = computeEdgeTotals(exemplar);
-
-  /* Initialize other data members: */
-  splitBy = 0;
 }
 
 /* Purpose: Destructor to remove dynamic memory.

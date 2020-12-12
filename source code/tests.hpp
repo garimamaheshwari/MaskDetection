@@ -89,18 +89,6 @@ void cottonMaskTestFVNeg() {
 
   /* Test negative image: */
   assert(!cottonMask.match(falseFV, originalFalse, "trueFalse2"));
-  cout << endl;
-
-  /* Read in a butterfly search image: */
-  originalFalse = imread("person2.jpg");
-  falseFV = originalFalse.clone();
-
-  /* Read in image and crop images: */
-  readImage(falseFV, "Person3 not wearing a mask");
-  trimImage(falseFV, originalFalse);
-
-  /* Test false negative image. Expected to get close to the mask: */
-  assert(!cottonMask.match(falseFV, originalFalse, "trueFalse3"));
 }
 
 /* Purpose: To illustrate false negatives and positives.
@@ -142,4 +130,19 @@ void cottonMaskFVIncorrectResults() {
   cout << endl;
 
   /* FALSE NEGATIVES */
+  /* Read in a mask search image: */
+  Mat originalNeg = imread("person2.jpg");
+  Mat falseNeg = originalNeg.clone();
+
+  /* Read in image and crop images: */
+  readImage(falseNeg, "Person wearing mask (front-view)");
+  trimImage(falseNeg, originalNeg);
+
+  /* Create transformation space: */
+  cottonMask.transformationSpace();
+
+  /* Test false negative image. Expected to get close to the mask, but return
+   * false even if true: */
+  assert(!cottonMask.match(falseNeg, originalNeg, "falseNeg"));
+  cout << endl;
 }
