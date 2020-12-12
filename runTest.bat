@@ -1,0 +1,1 @@
+start /w ../x64/Debug/MaskDetection.exe
